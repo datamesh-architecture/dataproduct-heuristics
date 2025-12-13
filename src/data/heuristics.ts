@@ -1,4 +1,5 @@
 export type SectionId = "general" | "source" | "aggregate" | "consumer";
+export type ArchetypeId = Exclude<SectionId, "general">;
 
 export interface QuestionStep {
   kind: "question";
@@ -370,6 +371,14 @@ export const SECTION_QUESTION_IDS: Record<SectionId, string[]> = {
   consumer: consumerQuestions.map((q) => q.id),
 };
 
+export const ARCHETYPE_IDS: ArchetypeId[] = ["source", "aggregate", "consumer"];
+export type ArchetypeSelectionMap = Record<ArchetypeId, boolean>;
+export const DEFAULT_ARCHETYPE_SELECTION: ArchetypeSelectionMap = {
+  source: true,
+  aggregate: false,
+  consumer: true,
+};
+
 export const HARD_REQUIREMENT_IDS: readonly QuestionStep["id"][] = [
   "general-single-owner",
   "source-domain-modules",
@@ -410,7 +419,10 @@ export const getAnswerLabel = (
   return labels[value] ?? `Score ${value}`;
 };
 
-export const getSectionTotals = (answers: AnswerMap) => {
+export const getSectionTotals = (
+  answers: AnswerMap,
+  steps: Step[] = STEPS,
+) => {
   const totals: Record<SectionId, { score: number; max: number }> = {
     general: { score: 0, max: 0 },
     source: { score: 0, max: 0 },
@@ -418,7 +430,7 @@ export const getSectionTotals = (answers: AnswerMap) => {
     consumer: { score: 0, max: 0 },
   };
 
-  STEPS.forEach((step) => {
+  steps.forEach((step) => {
     if (step.kind !== "question") {
       return;
     }
@@ -432,8 +444,11 @@ export const getSectionTotals = (answers: AnswerMap) => {
   return totals;
 };
 
-export const findFirstUnansweredIndex = (answers: AnswerMap): number => {
-  const index = STEPS.findIndex((step) => {
+export const findFirstUnansweredIndex = (
+  answers: AnswerMap,
+  steps: Step[] = STEPS,
+): number => {
+  const index = steps.findIndex((step) => {
     if (step.kind !== "question") {
       return false;
     }
@@ -441,7 +456,7 @@ export const findFirstUnansweredIndex = (answers: AnswerMap): number => {
   });
 
   if (index === -1) {
-    return STEPS.length - 1; // final summary
+    return steps.length - 1; // final summary
   }
 
   return index;
@@ -450,6 +465,7 @@ export const findFirstUnansweredIndex = (answers: AnswerMap): number => {
 export const getRecommendation = (
   totals: ReturnType<typeof getSectionTotals>,
   answers: AnswerMap,
+  archetypes: ArchetypeId[] = ARCHETYPE_IDS,
 ): RecommendationResult => {
   const generalScore = totals.general.score;
   const generalThreshold = STRONG_FIT_THRESHOLDS.general;
@@ -473,13 +489,19 @@ export const getRecommendation = (
   }
 
   const fits: string[] = [];
-  if (totals.source.score >= STRONG_FIT_THRESHOLDS.source) {
+  if (archetypes.includes("source") && totals.source.score >= STRONG_FIT_THRESHOLDS.source) {
     fits.push("source-aligned");
   }
-  if (totals.aggregate.score >= STRONG_FIT_THRESHOLDS.aggregate) {
+  if (
+    archetypes.includes("aggregate") &&
+    totals.aggregate.score >= STRONG_FIT_THRESHOLDS.aggregate
+  ) {
     fits.push("aggregate");
   }
-  if (totals.consumer.score >= STRONG_FIT_THRESHOLDS.consumer) {
+  if (
+    archetypes.includes("consumer") &&
+    totals.consumer.score >= STRONG_FIT_THRESHOLDS.consumer
+  ) {
     fits.push("consumer-aligned");
   }
 

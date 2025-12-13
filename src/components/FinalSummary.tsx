@@ -5,7 +5,6 @@ import {
   RecommendationResult,
   SECTION_META,
   SectionId,
-  STEPS,
   getAnswerLabel,
 } from '../data/heuristics';
 
@@ -13,12 +12,19 @@ interface FinalSummaryProps {
   totals: Record<SectionId, { score: number; max: number }>;
   answers: AnswerMap;
   recommendation: RecommendationResult;
+  questionSteps: QuestionStep[];
+  visibleSections: SectionId[];
   onSelectQuestion?: (questionId: string) => void;
 }
 
-const questionSteps = STEPS.filter((step): step is QuestionStep => step.kind === 'question');
-
-const FinalSummary = ({ totals, answers, recommendation, onSelectQuestion }: FinalSummaryProps) => {
+const FinalSummary = ({
+  totals,
+  answers,
+  recommendation,
+  questionSteps,
+  visibleSections,
+  onSelectQuestion,
+}: FinalSummaryProps) => {
   const hardRequirementIssues = HARD_REQUIREMENT_IDS.filter((id) => answers[id] === 0);
   const statusToClasses = {
     positive: {
@@ -64,11 +70,13 @@ const FinalSummary = ({ totals, answers, recommendation, onSelectQuestion }: Fin
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
-        {Object.entries(SECTION_META).map(([sectionId, meta]) => {
-          const { score, max } = totals[sectionId as SectionId];
+        {visibleSections.map((sectionId) => {
+          const { score, max } = totals[sectionId];
           return (
             <div key={sectionId} className="rounded-lg border border-slate-800 p-4">
-              <p className="text-sm uppercase tracking-wide text-slate-400">{meta.title}</p>
+              <p className="text-sm uppercase tracking-wide text-slate-400">
+                {SECTION_META[sectionId].title}
+              </p>
               <p className="text-2xl font-semibold text-white">{score} / {max}</p>
             </div>
           );

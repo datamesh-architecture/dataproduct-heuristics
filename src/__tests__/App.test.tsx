@@ -14,6 +14,8 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+
     expect(
       screen.getByText('Are there any specific teams or roles that want to use this product right now?')
     ).toBeInTheDocument();
@@ -40,7 +42,7 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Back' })).toBeEnabled();
   });
 
-  it('shows the final transparency table when every heuristic is answered', () => {
+  it('shows the final transparency table when every heuristic is answered', async () => {
     const allAnswered = questionSteps.reduce<AnswerMap>((acc, step) => {
       acc[step.id] = step.maxScore;
       return acc;
@@ -49,15 +51,19 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Overall summary')).toBeInTheDocument();
+    expect(await screen.findByText('Overall summary')).toBeInTheDocument();
     expect(
-      screen.getByText('Multiple archetypes qualify. Consider layering the products deliberately.')
+      await screen.findByText('Multiple archetypes qualify. Consider layering the products deliberately.')
     ).toBeInTheDocument();
 
     expect(
-      screen.getAllByText('Are there any specific teams or roles that want to use this product right now?')[0]
+      (
+        await screen.findAllByText(
+          'Are there any specific teams or roles that want to use this product right now?'
+        )
+      )[0]
     ).toBeInTheDocument();
-    expect(screen.getAllByText('2')[0]).toBeInTheDocument();
+    expect((await screen.findAllByText('2'))[0]).toBeInTheDocument();
   });
 
   it('restores the saved step index when stored state includes it', () => {
@@ -74,5 +80,19 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByText(questionSteps[5].prompt)).toBeInTheDocument();
+  });
+
+  it('requires at least one archetype to be selected before continuing', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: /Source-aligned/i }));
+    await user.click(screen.getByRole('button', { name: /Consumer-aligned/i }));
+
+    const continueButton = screen.getByRole('button', { name: 'Continue' });
+    expect(continueButton).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: /Source-aligned/i }));
+    expect(continueButton).toBeEnabled();
   });
 });

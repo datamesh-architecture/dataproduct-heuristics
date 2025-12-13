@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import ArchetypeSelector from './components/ArchetypeSelector';
 import FinalSummary from './components/FinalSummary';
 import QuestionCard from './components/QuestionCard';
 import SummaryCard from './components/SummaryCard';
 import {
+  ARCHETYPE_IDS,
+  DEFAULT_ARCHETYPE_SELECTION,
   AnswerMap,
   STEPS,
   STORAGE_KEY,
@@ -13,12 +16,29 @@ import {
   SectionId,
   SECTION_META,
   QuestionStep,
+  ArchetypeSelectionMap,
+  ArchetypeId,
+  SECTION_QUESTION_IDS,
+  SummaryStep,
 } from './data/heuristics';
 
 interface StoredState {
   answers: AnswerMap;
   currentIndex?: number;
+  selectedArchetypes?: ArchetypeSelectionMap;
 }
+
+interface ArchetypeSelectionStep {
+  kind: 'archetype-selection';
+  id: 'archetype-selection';
+}
+
+type FlowStep = Step | ArchetypeSelectionStep;
+
+const ARCHETYPE_SELECTION_STEP: ArchetypeSelectionStep = {
+  kind: 'archetype-selection',
+  id: 'archetype-selection',
+};
 
 const sanitizeAnswerMap = (value: unknown): AnswerMap => {
   if (!value || typeof value !== 'object') {
@@ -36,6 +56,57 @@ const sanitizeAnswerMap = (value: unknown): AnswerMap => {
   );
 };
 
+const sanitizeArchetypeSelection = (
+  value: unknown
+): ArchetypeSelectionMap | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  let hasExplicitValue = false;
+  const selection: ArchetypeSelectionMap = { ...DEFAULT_ARCHETYPE_SELECTION };
+  ARCHETYPE_IDS.forEach((id) => {
+    if (typeof record[id] === 'boolean') {
+      selection[id] = record[id] as boolean;
+      hasExplicitValue = true;
+    }
+  });
+  return hasExplicitValue ? selection : undefined;
+};
+
+const deriveSelectionFromAnswers = (answers: AnswerMap): ArchetypeSelectionMap => {
+  const derived = { ...DEFAULT_ARCHETYPE_SELECTION };
+  const aggregateAnswered = SECTION_QUESTION_IDS.aggregate.some(
+    (id) => answers[id] !== undefined
+  );
+  if (aggregateAnswered) {
+    derived.aggregate = true;
+  }
+  return derived;
+};
+
+const isSectionBoundStep = (step: Step): step is QuestionStep | SummaryStep =>
+  step.kind === 'question' || step.kind === 'summary';
+
+const shouldIncludeStep = (step: Step, selection: ArchetypeSelectionMap) => {
+  if (!isSectionBoundStep(step)) {
+    return true;
+  }
+  if (step.sectionId === 'general') {
+    return true;
+  }
+  const archetypeId = step.sectionId as ArchetypeId;
+  return selection[archetypeId];
+};
+
+const getContentSteps = (selection: ArchetypeSelectionMap): Step[] =>
+  STEPS.filter((step) => shouldIncludeStep(step, selection));
+
+const getFlowSteps = (selection: ArchetypeSelectionMap): FlowStep[] => [
+  ARCHETYPE_SELECTION_STEP,
+  ...getContentSteps(selection),
+];
+
 const parseStoredState = (raw: unknown): StoredState => {
   if (!raw || typeof raw !== 'object') {
     return { answers: {} };
@@ -49,6 +120,7 @@ const parseStoredState = (raw: unknown): StoredState => {
         typeof record.currentIndex === 'number' && Number.isFinite(record.currentIndex)
           ? record.currentIndex
           : undefined,
+      selectedArchetypes: sanitizeArchetypeSelection(record.selectedArchetypes),
     };
   }
 
@@ -57,6 +129,9 @@ const parseStoredState = (raw: unknown): StoredState => {
 
 const App = () => {
   const [answers, setAnswers] = useState<AnswerMap>({});
+  const [selectedArchetypes, setSelectedArchetypes] = useState<ArchetypeSelectionMap>(
+    DEFAULT_ARCHETYPE_SELECTION
+  );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
 
@@ -66,14 +141,21 @@ const App = () => {
       if (cached) {
         const parsed = parseStoredState(JSON.parse(cached));
         setAnswers(parsed.answers);
+        const storedSelection =
+          parsed.selectedArchetypes ?? deriveSelectionFromAnswers(parsed.answers);
+        setSelectedArchetypes(storedSelection);
+        const contentSteps = getContentSteps(storedSelection);
+        const flowSteps = getFlowSteps(storedSelection);
         if (typeof parsed.currentIndex === 'number') {
-          const clampedIndex = Math.max(
+          const offset = parsed.selectedArchetypes ? 0 : 1;
+          const adjustedIndex = Math.max(
             0,
-            Math.min(Math.floor(parsed.currentIndex), STEPS.length - 1)
+            Math.min(Math.floor(parsed.currentIndex + offset), flowSteps.length - 1)
           );
-          setCurrentIndex(clampedIndex);
+          setCurrentIndex(adjustedIndex);
         } else {
-          setCurrentIndex(findFirstUnansweredIndex(parsed.answers));
+          const firstUnanswered = findFirstUnansweredIndex(parsed.answers, contentSteps);
+          setCurrentIndex(firstUnanswered + 1);
         }
       }
     } catch (error) {
@@ -90,30 +172,67 @@ const App = () => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ answers, currentIndex })
+        JSON.stringify({ answers, currentIndex, selectedArchetypes })
       );
     } catch (error) {
       console.warn('Failed to persist answers', error);
     }
-  }, [answers, currentIndex, isHydrated]);
+  }, [answers, currentIndex, isHydrated, selectedArchetypes]);
 
-  const totals = useMemo(() => getSectionTotals(answers), [answers]);
-  const recommendation = useMemo(() => getRecommendation(totals, answers), [totals, answers]);
+  const contentSteps = useMemo(() => getContentSteps(selectedArchetypes), [selectedArchetypes]);
+  const steps = useMemo<FlowStep[]>(
+    () => [ARCHETYPE_SELECTION_STEP, ...contentSteps],
+    [contentSteps]
+  );
+  const questionSteps = useMemo(
+    () => contentSteps.filter((step): step is QuestionStep => step.kind === 'question'),
+    [contentSteps]
+  );
   const questionStepIds = useMemo(
-    () =>
-      STEPS.filter((step): step is QuestionStep => step.kind === 'question').map(
-        (step) => step.id
-      ),
-    []
+    () => questionSteps.map((step) => step.id),
+    [questionSteps]
   );
   const allQuestionsAnswered = useMemo(
     () => questionStepIds.every((id) => answers[id] !== undefined),
     [answers, questionStepIds]
   );
 
-  const currentStep = STEPS[currentIndex];
-  const totalSteps = STEPS.length;
-  const currentProgress = Math.round(((currentIndex + 1) / totalSteps) * 100);
+  const totals = useMemo(() => getSectionTotals(answers, contentSteps), [answers, contentSteps]);
+  const activeArchetypes = useMemo(
+    () => ARCHETYPE_IDS.filter((id) => selectedArchetypes[id]),
+    [selectedArchetypes]
+  );
+  const recommendation = useMemo(
+    () => getRecommendation(totals, answers, activeArchetypes),
+    [totals, answers, activeArchetypes]
+  );
+  const visibleSectionIds = useMemo<SectionId[]>(
+    () => ['general', ...activeArchetypes],
+    [activeArchetypes]
+  );
+
+  const totalSteps = steps.length;
+  const effectiveIndex = Math.min(currentIndex, totalSteps - 1);
+  const currentStep = steps[effectiveIndex];
+  const currentProgress = Math.round(((effectiveIndex + 1) / totalSteps) * 100);
+  const isOnFirstStep = effectiveIndex === 0;
+  const isLastStep = effectiveIndex === totalSteps - 1;
+
+  useEffect(() => {
+    if (!isHydrated) {
+      return;
+    }
+    setCurrentIndex((prev) => Math.min(prev, Math.max(steps.length - 1, 0)));
+  }, [isHydrated, steps.length]);
+
+  const hasSelectedArchetype = activeArchetypes.length > 0;
+
+  const handleToggleArchetype = (archetypeId: ArchetypeId) => {
+    setSelectedArchetypes((prev) => ({
+      ...prev,
+      [archetypeId]: !prev[archetypeId],
+    }));
+  };
 
   const handleAnswer = (value: number) => {
     if (currentStep.kind !== 'question') {
@@ -143,12 +262,13 @@ const App = () => {
       return;
     }
     setAnswers({});
+    setSelectedArchetypes({ ...DEFAULT_ARCHETYPE_SELECTION });
     setCurrentIndex(0);
     localStorage.removeItem(STORAGE_KEY);
   };
 
   const handleSelectQuestion = (questionId: string) => {
-    const targetIndex = STEPS.findIndex(
+    const targetIndex = steps.findIndex(
       (step) => step.kind === 'question' && step.id === questionId
     );
     if (targetIndex !== -1) {
@@ -157,14 +277,25 @@ const App = () => {
   };
 
   const goToSummary = () => {
-    setCurrentIndex(STEPS.length - 1);
+    setCurrentIndex(steps.length - 1);
   };
 
-  const canProceed =
-    currentStep.kind !== 'question' || answers[currentStep.id] !== undefined;
+  const canProceed = (() => {
+    if (currentStep.kind === 'question') {
+      return answers[currentStep.id] !== undefined;
+    }
+    if (currentStep.kind === 'archetype-selection') {
+      return hasSelectedArchetype;
+    }
+    return true;
+  })();
 
-  const renderStep = (step: Step) => {
+  const renderStep = (step: FlowStep) => {
     switch (step.kind) {
+      case 'archetype-selection':
+        return (
+          <ArchetypeSelector selection={selectedArchetypes} onToggle={handleToggleArchetype} />
+        );
       case 'question':
         return (
           <QuestionCard
@@ -181,6 +312,8 @@ const App = () => {
             totals={totals}
             answers={answers}
             recommendation={recommendation}
+            questionSteps={questionSteps}
+            visibleSections={visibleSectionIds}
             onSelectQuestion={handleSelectQuestion}
           />
         );
@@ -190,6 +323,9 @@ const App = () => {
   };
 
   const activeSectionTitle = (() => {
+    if (currentStep.kind === 'archetype-selection') {
+      return 'Choose archetypes';
+    }
     if (currentStep.kind === 'question' || currentStep.kind === 'summary') {
       return SECTION_META[currentStep.sectionId].title;
     }
@@ -215,7 +351,7 @@ const App = () => {
         <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
             <span>
-              Step {currentIndex + 1} / {totalSteps}
+              Step {effectiveIndex + 1} / {totalSteps}
             </span>
           </div>
           <div className="mt-3 h-2 rounded-full bg-slate-800">
@@ -244,7 +380,7 @@ const App = () => {
               type="button"
               onClick={goBack}
               className="rounded-full border border-slate-700 px-5 py-2 text-sm text-slate-100 transition hover:border-slate-400"
-              disabled={currentIndex === 0}
+              disabled={isOnFirstStep}
             >
               Back
             </button>
@@ -253,7 +389,7 @@ const App = () => {
                 type="button"
                 onClick={goNext}
                 className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700"
-                disabled={!canProceed || currentIndex === totalSteps - 1}
+                disabled={!canProceed || isLastStep}
               >
                 {currentStep.kind === 'question' ? 'Next' : 'Continue'}
               </button>
