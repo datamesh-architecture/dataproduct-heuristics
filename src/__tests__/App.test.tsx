@@ -30,6 +30,19 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
+  it('keeps the chosen answer highlighted when navigating back', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    await user.click(screen.getByRole('button', { name: 'Partially / unclear' }));
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    const selectedOption = screen.getByRole('button', { name: /Partially \/ unclear/ });
+    expect(selectedOption).toHaveAttribute('aria-pressed', 'true');
+    expect(selectedOption).toHaveClass('border-sky-400 bg-sky-50 text-sky-900');
+  });
+
   it('hydrates from local storage and jumps to the first unanswered heuristic', () => {
     const savedAnswers: AnswerMap = { [questionSteps[0].id]: 2 };
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(savedAnswers));

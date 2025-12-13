@@ -7,7 +7,7 @@ interface QuestionCardProps {
 }
 
 const baseButtonStyles =
-  'rounded-md border border-slate-200 bg-white px-4 py-3 text-left text-sm text-slate-700 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400';
+  'border flex items-start gap-3 rounded-md px-4 py-3 text-left text-sm text-slate-700 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400';
 
 const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => {
   const labels = getScaleLabels(step.maxScore);
@@ -31,7 +31,7 @@ const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => 
           const buttonClasses = `${baseButtonStyles} ${
             isSelected
               ? 'border-sky-400 bg-sky-50 text-sky-900'
-              : 'hover:border-slate-300 hover:bg-slate-50'
+              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
           }`;
           return (
             <button
