@@ -20,6 +20,7 @@ import {
   ArchetypeId,
   SECTION_QUESTION_IDS,
   SummaryStep,
+  getQualifiedArchetypes,
 } from './data/heuristics';
 
 interface StoredState {
@@ -206,6 +207,10 @@ const App = () => {
     () => getRecommendation(totals, answers, activeArchetypes),
     [totals, answers, activeArchetypes]
   );
+  const recommendedArchetypes = useMemo(
+    () => getQualifiedArchetypes(totals, activeArchetypes),
+    [totals, activeArchetypes]
+  );
   const visibleSectionIds = useMemo<SectionId[]>(
     () => ['general', ...activeArchetypes],
     [activeArchetypes]
@@ -305,7 +310,15 @@ const App = () => {
           />
         );
       case 'summary':
-        return <SummaryCard step={step} totals={totals} />;
+        return (
+          <SummaryCard
+            step={step}
+            totals={totals}
+            answers={answers}
+            showGoToSummary={allQuestionsAnswered}
+            onGoToSummary={goToSummary}
+          />
+        );
       case 'final':
         return (
           <FinalSummary
@@ -314,6 +327,7 @@ const App = () => {
             recommendation={recommendation}
             questionSteps={questionSteps}
             visibleSections={visibleSectionIds}
+            recommendedArchetypes={recommendedArchetypes}
             onSelectQuestion={handleSelectQuestion}
           />
         );
@@ -367,23 +381,25 @@ const App = () => {
         <footer className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div />
           <div className="flex flex-wrap gap-3">
-            {allQuestionsAnswered && currentStep.kind === 'question' && (
+            {allQuestionsAnswered && currentStep.kind !== 'final' && (
               <button
                 type="button"
                 onClick={goToSummary}
                 className="rounded-full border border-emerald-300 bg-white px-5 py-2 text-sm font-medium text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800"
               >
-                Jump to summary
+                Go to summary
               </button>
             )}
-            <button
-              type="button"
-              onClick={goBack}
-              className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
-              disabled={isOnFirstStep}
-            >
-              Back
-            </button>
+            {currentStep.kind !== 'archetype-selection' && (
+              <button
+                type="button"
+                onClick={goBack}
+                className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
+                disabled={isOnFirstStep}
+              >
+                Back
+              </button>
+            )}
             {currentStep.kind !== 'final' && (
               <button
                 type="button"

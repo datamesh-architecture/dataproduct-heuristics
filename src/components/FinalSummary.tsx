@@ -1,11 +1,12 @@
 import {
   AnswerMap,
-  HARD_REQUIREMENT_IDS,
+  ArchetypeId,
   QuestionStep,
   RecommendationResult,
   SECTION_META,
   SectionId,
   getAnswerLabel,
+  getHardRequirementIssues,
 } from '../data/heuristics';
 
 interface FinalSummaryProps {
@@ -14,6 +15,7 @@ interface FinalSummaryProps {
   recommendation: RecommendationResult;
   questionSteps: QuestionStep[];
   visibleSections: SectionId[];
+  recommendedArchetypes: ArchetypeId[];
   onSelectQuestion?: (questionId: string) => void;
 }
 
@@ -23,9 +25,13 @@ const FinalSummary = ({
   recommendation,
   questionSteps,
   visibleSections,
+  recommendedArchetypes,
   onSelectQuestion,
 }: FinalSummaryProps) => {
-  const hardRequirementIssues = HARD_REQUIREMENT_IDS.filter((id) => answers[id] === 0);
+  const hardRequirementIssues = getHardRequirementIssues(answers);
+  const displayedHardRequirementIssues = hardRequirementIssues.filter(
+    (issue) => issue.sectionId === 'general' || recommendedArchetypes.includes(issue.sectionId as ArchetypeId)
+  );
   const statusToClasses = {
     positive: {
       box: 'border-emerald-200 bg-emerald-50 text-emerald-900',
@@ -49,18 +55,17 @@ const FinalSummary = ({
       <div className={`mt-4 rounded-xl border p-4 ${currentStatus.box}`}>
         <p className={`text-sm uppercase tracking-wide ${currentStatus.label}`}>Recommendation</p>
         <p className="mt-1 text-lg font-medium">{recommendation.message}</p>
-        {hardRequirementIssues.length > 0 && (
+        {displayedHardRequirementIssues.length > 0 && (
           <ul className="mt-2 space-y-1">
-            {hardRequirementIssues.map((id) => {
-              const step = questionSteps.find((item) => item.id === id);
+            {displayedHardRequirementIssues.map((step) => {
               return (
-                <li key={id}>
+                <li key={step.id}>
                   <button
                     type="button"
-                    onClick={() => onSelectQuestion?.(id)}
+                    onClick={() => onSelectQuestion?.(step.id)}
                     className="text-left text-sky-600 underline decoration-sky-500 underline-offset-2 transition hover:text-sky-800"
                   >
-                    {step?.prompt ?? id}
+                    {step?.prompt ?? step.id}
                   </button>
                 </li>
               );

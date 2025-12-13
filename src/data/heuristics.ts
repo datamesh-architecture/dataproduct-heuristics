@@ -393,6 +393,16 @@ export const STRONG_FIT_THRESHOLDS: Record<SectionId, number> = {
   consumer: 13,
 };
 
+export const getQualifiedArchetypes = (
+  totals: ReturnType<typeof getSectionTotals>,
+  archetypes: ArchetypeId[] = ARCHETYPE_IDS,
+): ArchetypeId[] =>
+  ARCHETYPE_IDS.filter(
+    (archetypeId) =>
+      archetypes.includes(archetypeId) &&
+      totals[archetypeId].score >= STRONG_FIT_THRESHOLDS[archetypeId],
+  );
+
 export const getScaleLabels = (
   maxScore: QuestionStep["maxScore"],
 ): string[] => {
@@ -419,10 +429,7 @@ export const getAnswerLabel = (
   return labels[value] ?? `Score ${value}`;
 };
 
-export const getSectionTotals = (
-  answers: AnswerMap,
-  steps: Step[] = STEPS,
-) => {
+export const getSectionTotals = (answers: AnswerMap, steps: Step[] = STEPS) => {
   const totals: Record<SectionId, { score: number; max: number }> = {
     general: { score: 0, max: 0 },
     source: { score: 0, max: 0 },
@@ -462,6 +469,18 @@ export const findFirstUnansweredIndex = (
   return index;
 };
 
+export const getHardRequirementIssues = (
+  answers: AnswerMap,
+): QuestionStep[] => {
+  const hardRequirementIssues = HARD_REQUIREMENT_IDS.map(
+    (id) => STEPS.find((step) => step.id === id) as QuestionStep,
+  ).filter(
+    (questionStep) => answers[questionStep.id] < questionStep?.maxScore,
+  );
+
+  return hardRequirementIssues;
+};
+
 export const getRecommendation = (
   totals: ReturnType<typeof getSectionTotals>,
   answers: AnswerMap,
@@ -477,33 +496,32 @@ export const getRecommendation = (
     };
   }
 
-  const hardRequirementIssues = HARD_REQUIREMENT_IDS.filter(
-    (id) => answers[id] === 0,
-  );
-  if (hardRequirementIssues.length > 0) {
+  const hardRequirementIssues = getHardRequirementIssues(answers);
+  const qualifiedArchetypes = getQualifiedArchetypes(totals, archetypes);
+  const formatArchetypeLabel = (archetypeId: ArchetypeId) =>
+    archetypeId === "source" ? "source-aligned" : archetypeId;
+
+  const blockingHardRequirements = hardRequirementIssues.filter((issue) => {
+    if (issue.sectionId === "general") {
+      return true;
+    }
+    return qualifiedArchetypes.includes(issue.sectionId as ArchetypeId);
+  });
+
+  if (blockingHardRequirements.length > 0) {
+    const qualifiedLabel =
+      qualifiedArchetypes.length > 0
+        ? `Qualifies for ${qualifiedArchetypes.map(formatArchetypeLabel).join(", ")}, but `
+        : "No archetype qualifies yet; also ";
     return {
-      message:
-        "Resolve hard requirements before building the product:",
+      message: `${qualifiedLabel}resolve hard requirements before building the product.`,
       status: "negative",
     };
   }
 
-  const fits: string[] = [];
-  if (archetypes.includes("source") && totals.source.score >= STRONG_FIT_THRESHOLDS.source) {
-    fits.push("source-aligned");
-  }
-  if (
-    archetypes.includes("aggregate") &&
-    totals.aggregate.score >= STRONG_FIT_THRESHOLDS.aggregate
-  ) {
-    fits.push("aggregate");
-  }
-  if (
-    archetypes.includes("consumer") &&
-    totals.consumer.score >= STRONG_FIT_THRESHOLDS.consumer
-  ) {
-    fits.push("consumer-aligned");
-  }
+  const fits: string[] = qualifiedArchetypes.map((archetypeId) =>
+    archetypeId === "source" ? "source-aligned" : archetypeId,
+  );
 
   if (fits.length === 0) {
     return {

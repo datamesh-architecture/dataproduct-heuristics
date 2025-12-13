@@ -1,15 +1,32 @@
-import { SectionId, STRONG_FIT_THRESHOLDS, SummaryStep } from '../data/heuristics';
+import {
+  AnswerMap,
+  SectionId,
+  STRONG_FIT_THRESHOLDS,
+  SummaryStep,
+  getHardRequirementIssues,
+} from '../data/heuristics';
 
 interface SummaryCardProps {
   step: SummaryStep;
   totals: Record<SectionId, { score: number; max: number }>;
+  answers: AnswerMap;
+  showGoToSummary?: boolean;
+  onGoToSummary?: () => void;
 }
 
-const SummaryCard = ({ step, totals }: SummaryCardProps) => {
+const SummaryCard = ({
+  step,
+  totals,
+  answers,
+  showGoToSummary,
+  onGoToSummary,
+}: SummaryCardProps) => {
   const sectionTotal = totals[step.sectionId];
   const threshold = STRONG_FIT_THRESHOLDS[step.sectionId];
   const isStrongFit = threshold !== undefined && sectionTotal.score >= threshold;
-  const progress = sectionTotal.max > 0 ? Math.round((sectionTotal.score / sectionTotal.max) * 100) : 0;
+  const hardRequirementIssues = getHardRequirementIssues(answers).filter(
+    (issue) => issue.sectionId === step.sectionId
+  );
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
@@ -18,7 +35,6 @@ const SummaryCard = ({ step, totals }: SummaryCardProps) => {
         <span className="rounded-full border border-slate-200 px-3 py-1">
           {sectionTotal.score} / {sectionTotal.max} pts
         </span>
-        <span className="text-slate-500">Progress: {progress}%</span>
         {threshold !== undefined && (
           <span
             className={`rounded-full border px-3 py-1 font-medium ${
@@ -36,7 +52,16 @@ const SummaryCard = ({ step, totals }: SummaryCardProps) => {
           <li key={line}>{line}</li>
         ))}
       </ul>
-      {step.note && <p className="mt-4 text-sm text-slate-500">{step.note}</p>}
+      {hardRequirementIssues.length > 0 && (
+        <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="font-semibold">Hard requirements not met in this section:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            {hardRequirementIssues.map((issue) => (
+              <li key={issue.id}>{issue.prompt}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };
