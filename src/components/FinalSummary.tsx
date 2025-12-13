@@ -2,6 +2,7 @@ import {
   AnswerMap,
   HARD_STOP_IDS,
   QuestionStep,
+  RecommendationResult,
   SECTION_META,
   SectionId,
   STEPS,
@@ -11,21 +12,37 @@ import {
 interface FinalSummaryProps {
   totals: Record<SectionId, { score: number; max: number }>;
   answers: AnswerMap;
-  recommendation: string;
+  recommendation: RecommendationResult;
+  onSelectQuestion?: (questionId: string) => void;
 }
 
 const questionSteps = STEPS.filter((step): step is QuestionStep => step.kind === 'question');
 
-const FinalSummary = ({ totals, answers, recommendation }: FinalSummaryProps) => {
+const FinalSummary = ({ totals, answers, recommendation, onSelectQuestion }: FinalSummaryProps) => {
   const hardStopIssues = HARD_STOP_IDS.filter((id) => answers[id] === 0);
+  const statusToClasses = {
+    positive: {
+      box: 'border-emerald-600/70 bg-emerald-500/10 text-emerald-50',
+      label: 'text-emerald-300',
+    },
+    caution: {
+      box: 'border-amber-500/60 bg-amber-400/10 text-amber-50',
+      label: 'text-amber-300',
+    },
+    negative: {
+      box: 'border-rose-600/70 bg-rose-500/10 text-rose-50',
+      label: 'text-rose-300',
+    },
+  } as const;
+  const currentStatus = statusToClasses[recommendation.status];
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-slate-900/40">
-      <h2 className="text-2xl font-semibold text-white">Outcome transparency</h2>
+      <h2 className="text-2xl font-semibold text-white">Overall summary</h2>
       <p className="mt-2 text-slate-300">All responses and their point values are listed below.</p>
-      <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900 p-4 text-slate-100">
-        <p className="text-sm uppercase tracking-wide text-slate-400">Recommendation</p>
-        <p className="mt-1 text-lg font-medium text-white">{recommendation}</p>
+      <div className={`mt-4 rounded-xl border p-4 ${currentStatus.box}`}>
+        <p className={`text-sm uppercase tracking-wide ${currentStatus.label}`}>Recommendation</p>
+        <p className="mt-1 text-lg font-medium">{recommendation.message}</p>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -68,7 +85,15 @@ const FinalSummary = ({ totals, answers, recommendation }: FinalSummaryProps) =>
             {questionSteps.map((step) => (
               <tr key={step.id}>
                 <td className="px-4 py-3 text-slate-400">{SECTION_META[step.sectionId].title}</td>
-                <td className="px-4 py-3">{step.prompt}</td>
+                <td className="px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => onSelectQuestion?.(step.id)}
+                    className="w-full text-left text-sky-400 underline decoration-sky-500 underline-offset-2 transition hover:text-sky-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400"
+                  >
+                    {step.prompt}
+                  </button>
+                </td>
                 <td className="px-4 py-3">{getAnswerLabel(step, answers[step.id])}</td>
                 <td className="px-4 py-3">{answers[step.id] ?? '-'}</td>
               </tr>

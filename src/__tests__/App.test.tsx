@@ -10,7 +10,7 @@ describe('App', () => {
     window.localStorage.clear();
   });
 
-  it('requires an answer before continuing and advances to the next question', async () => {
+  it('auto-advances to the next question after selecting an answer', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -18,16 +18,14 @@ describe('App', () => {
       screen.getByText('Do concrete teams or roles exist now?')
     ).toBeInTheDocument();
 
-    const nextButton = screen.getByRole('button', { name: 'Next' });
-    expect(nextButton).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: 'Partially / unclear' }));
-    expect(nextButton).toBeEnabled();
 
-    await user.click(nextButton);
     expect(
       screen.getByText('Can consumers use this without stitching other products?')
     ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
   it('hydrates from local storage and jumps to the first unanswered heuristic', () => {
@@ -51,12 +49,28 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(screen.getByText('Outcome transparency')).toBeInTheDocument();
+    expect(screen.getByText('Overall summary')).toBeInTheDocument();
     expect(
-      screen.getByText('Multiple archetypes qualify. Layer the products deliberately.')
+      screen.getByText('Multiple archetypes qualify. Consider layering the products deliberately.')
     ).toBeInTheDocument();
 
     expect(screen.getAllByText('Do concrete teams or roles exist now?')[0]).toBeInTheDocument();
     expect(screen.getAllByText('2')[0]).toBeInTheDocument();
+  });
+
+  it('restores the saved step index when stored state includes it', () => {
+    const answered = questionSteps.slice(0, 3).reduce<AnswerMap>((acc, step) => {
+      acc[step.id] = step.maxScore;
+      return acc;
+    }, {} as AnswerMap);
+
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ answers: answered, currentIndex: 5 })
+    );
+
+    render(<App />);
+
+    expect(screen.getByText(questionSteps[5].prompt)).toBeInTheDocument();
   });
 });

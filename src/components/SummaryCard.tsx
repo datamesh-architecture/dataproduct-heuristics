@@ -8,6 +8,7 @@ interface SummaryCardProps {
 const SummaryCard = ({ step, totals }: SummaryCardProps) => {
   const sectionTotal = totals[step.sectionId];
   const threshold = STRONG_FIT_THRESHOLDS[step.sectionId];
+  const isStrongFit = threshold !== undefined && sectionTotal.score >= threshold;
   const progress = sectionTotal.max > 0 ? Math.round((sectionTotal.score / sectionTotal.max) * 100) : 0;
 
   return (
@@ -19,8 +20,14 @@ const SummaryCard = ({ step, totals }: SummaryCardProps) => {
         </span>
         <span className="text-slate-400">Progress: {progress}%</span>
         {threshold !== undefined && (
-          <span className="rounded-full border border-slate-700 px-3 py-1 text-slate-200">
-            Strong fit ≥ {threshold}
+          <span
+            className={`rounded-full border px-3 py-1 font-medium ${
+              isStrongFit
+                ? 'border-emerald-600/70 bg-emerald-500/10 text-emerald-200'
+                : 'border-rose-600/70 bg-rose-500/10 text-rose-200'
+            }`}
+          >
+            {isStrongFit ? 'Strong fit' : 'Not a strong fit'}
           </span>
         )}
       </div>

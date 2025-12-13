@@ -47,4 +47,4 @@ Use `npm run test:watch` for an interactive workflow.
 
 ## Local storage
 
-Answers live under the `data-product-cut-answers` key. Click **Clear saved answers** in the header to reset the questionnaire and wipe the key from the browser.
+Answers live under the `data-product-cut-answers` key. Click **Start over** in the header to reset the questionnaire and wipe the key from the browser.

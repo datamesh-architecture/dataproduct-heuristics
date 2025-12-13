@@ -31,6 +31,13 @@ export type AnswerMap = Record<string, number>;
 
 export const STORAGE_KEY = 'data-product-cut-answers';
 
+export type RecommendationStatus = 'positive' | 'caution' | 'negative';
+
+export interface RecommendationResult {
+  message: string;
+  status: RecommendationStatus;
+}
+
 const createQuestion = (
   id: string,
   sectionId: SectionId,
@@ -383,15 +390,21 @@ export const findFirstUnansweredIndex = (answers: AnswerMap): number => {
 export const getRecommendation = (
   totals: ReturnType<typeof getSectionTotals>,
   answers: AnswerMap
-): string => {
+): RecommendationResult => {
   const generalScore = totals.general.score;
   if (generalScore < 14) {
-    return 'General viability is below 14. Rework the boundary before moving ahead.';
+    return {
+      message: 'General viability is below 14. Rework the boundary before moving ahead.',
+      status: 'negative',
+    };
   }
 
   const hardStopIssues = HARD_STOP_IDS.filter((id) => answers[id] === 0);
   if (hardStopIssues.length > 0) {
-    return 'Resolve hard stops (ownership, domains, costs, or consumers) before building the product.';
+    return {
+      message: 'Resolve hard stops (ownership, domains, costs, or consumers) before building the product.',
+      status: 'negative',
+    };
   }
 
   const fits: string[] = [];
@@ -406,12 +419,21 @@ export const getRecommendation = (
   }
 
   if (fits.length === 0) {
-    return 'No archetype fit crossed the threshold. Redesign the cut.';
+    return {
+      message: 'No archetype fit crossed the threshold. Redesign the cut.',
+      status: 'negative',
+    };
   }
 
   if (fits.length === 1) {
-    return `Build a ${fits[0]} data product.`;
+    return {
+      message: `Build a ${fits[0]} data product.`,
+      status: 'positive',
+    };
   }
 
-  return 'Multiple archetypes qualify. Layer the products deliberately.';
+  return {
+    message: 'Multiple archetypes qualify. Consider layering the products deliberately.',
+    status: 'caution',
+  };
 };
