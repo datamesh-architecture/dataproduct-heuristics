@@ -9,11 +9,11 @@ import {
 type SectionTotals = Record<SectionId, { score: number; max: number }>;
 
 const baseTotals: SectionTotals = {
-  general: { score: 14, max: 20 },
-  source: { score: 0, max: 10 },
-  aggregate: { score: 0, max: 18 },
+  general: { score: 19, max: 22 },
+  source: { score: 0, max: 12 },
+  aggregate: { score: 0, max: 23 },
   consumer: { score: 0, max: 18 },
-  hardStops: { score: 3, max: 3 },
+  hardStops: { score: 4, max: 4 },
 };
 
 const safeAnswers: AnswerMap = HARD_STOP_IDS.reduce<AnswerMap>((acc, id) => {
@@ -25,9 +25,9 @@ describe('getRecommendation', () => {
   it('flags multiple archetype fits as a cautionary outcome', () => {
     const totals: SectionTotals = {
       ...baseTotals,
-      general: { score: 16, max: 20 },
-      source: { score: RECOMMENDATION_THRESHOLDS.source + 1, max: 10 },
-      aggregate: { score: RECOMMENDATION_THRESHOLDS.aggregate + 1, max: 18 },
+      general: { score: 20, max: 22 },
+      source: { score: RECOMMENDATION_THRESHOLDS.source + 1, max: 12 },
+      aggregate: { score: RECOMMENDATION_THRESHOLDS.aggregate + 1, max: 23 },
     };
 
     const result = getRecommendation(totals, safeAnswers);

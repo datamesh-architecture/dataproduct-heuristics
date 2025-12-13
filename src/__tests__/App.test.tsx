@@ -15,7 +15,7 @@ describe('App', () => {
     render(<App />);
 
     expect(
-      screen.getByText('Do concrete teams or roles exist now?')
+      screen.getByText('Are there any specific teams or roles that want to use this product right now?')
     ).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
@@ -23,7 +23,7 @@ describe('App', () => {
     await user.click(screen.getByRole('button', { name: 'Partially / unclear' }));
 
     expect(
-      screen.getByText('Can consumers use this without stitching other products?')
+      screen.getByText('Can consumers use this without stitching data products together?')
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
@@ -35,7 +35,7 @@ describe('App', () => {
     render(<App />);
 
     expect(
-      screen.getByText('Can consumers use this without stitching other products?')
+      screen.getByText('Can consumers use this without stitching data products together?')
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Back' })).toBeEnabled();
   });
@@ -54,7 +54,9 @@ describe('App', () => {
       screen.getByText('Multiple archetypes qualify. Consider layering the products deliberately.')
     ).toBeInTheDocument();
 
-    expect(screen.getAllByText('Do concrete teams or roles exist now?')[0]).toBeInTheDocument();
+    expect(
+      screen.getAllByText('Are there any specific teams or roles that want to use this product right now?')[0]
+    ).toBeInTheDocument();
     expect(screen.getAllByText('2')[0]).toBeInTheDocument();
   });
 
