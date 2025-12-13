@@ -1,9 +1,4 @@
-export type SectionId =
-  | "general"
-  | "source"
-  | "aggregate"
-  | "consumer"
-  | "hardStops";
+export type SectionId = "general" | "source" | "aggregate" | "consumer";
 
 export interface QuestionStep {
   kind: "question";
@@ -308,37 +303,6 @@ const consumerQuestions: QuestionStep[] = [
   ),
 ];
 
-const hardStopQuestions: QuestionStep[] = [
-  createQuestion(
-    "hard-owner",
-    "hardStops",
-    "Hard stops",
-    "Is there a clear operational owner?",
-    1,
-  ),
-  createQuestion(
-    "hard-domain-split",
-    "hardStops",
-    "Hard stops",
-    "Is the source-aligned cut limited to a single domain?",
-    1,
-  ),
-  createQuestion(
-    "hard-cost-owner",
-    "hardStops",
-    "Hard stops",
-    "Is there a clear owner for costs?",
-    1,
-  ),
-  createQuestion(
-    "hard-named-consumers",
-    "hardStops",
-    "Hard stops",
-    "Do you have named business consumers?",
-    1,
-  ),
-];
-
 const summarySteps: SummaryStep[] = [
   {
     kind: "summary",
@@ -372,16 +336,6 @@ const summarySteps: SummaryStep[] = [
     title: "Consumer-aligned summary",
     description: ["Score ≥ 13 indicates a strong consumer-aligned fit."],
   },
-  {
-    kind: "summary",
-    id: "hard-summary",
-    sectionId: "hardStops",
-    title: "Hard stops reminder",
-    description: [
-      "Any “no” on these checks is a blocker.",
-      "Resolve owners, domain boundaries, and named consumers before continuing.",
-    ],
-  },
 ];
 
 const finalStep: FinalStep = {
@@ -399,8 +353,6 @@ export const STEPS: Step[] = [
   summarySteps[2],
   ...consumerQuestions,
   summarySteps[3],
-  ...hardStopQuestions,
-  summarySteps[4],
   finalStep,
 ];
 
@@ -409,7 +361,6 @@ export const SECTION_META: Record<SectionId, { title: string }> = {
   source: { title: "Source-aligned" },
   aggregate: { title: "Aggregate" },
   consumer: { title: "Consumer-aligned" },
-  hardStops: { title: "Hard stops" },
 };
 
 export const SECTION_QUESTION_IDS: Record<SectionId, string[]> = {
@@ -417,22 +368,17 @@ export const SECTION_QUESTION_IDS: Record<SectionId, string[]> = {
   source: sourceQuestions.map((q) => q.id),
   aggregate: aggregateQuestions.map((q) => q.id),
   consumer: consumerQuestions.map((q) => q.id),
-  hardStops: hardStopQuestions.map((q) => q.id),
 };
 
-export const HARD_STOP_IDS = SECTION_QUESTION_IDS.hardStops;
+export const HARD_REQUIREMENT_IDS: readonly QuestionStep["id"][] = [
+  "general-single-owner",
+  "source-domain-modules",
+  "aggregate-cost-owner",
+  "consumer-business-consumers",
+];
 
-export const STRONG_FIT_THRESHOLDS: Partial<Record<SectionId, number>> = {
+export const STRONG_FIT_THRESHOLDS: Record<SectionId, number> = {
   general: 19,
-  source: 9,
-  aggregate: 18,
-  consumer: 13,
-};
-
-export const RECOMMENDATION_THRESHOLDS: Record<
-  Exclude<SectionId, "general" | "hardStops">,
-  number
-> = {
   source: 9,
   aggregate: 18,
   consumer: 13,
@@ -470,7 +416,6 @@ export const getSectionTotals = (answers: AnswerMap) => {
     source: { score: 0, max: 0 },
     aggregate: { score: 0, max: 0 },
     consumer: { score: 0, max: 0 },
-    hardStops: { score: 0, max: 0 },
   };
 
   STEPS.forEach((step) => {
@@ -507,7 +452,8 @@ export const getRecommendation = (
   answers: AnswerMap,
 ): RecommendationResult => {
   const generalScore = totals.general.score;
-  if (generalScore < 19) {
+  const generalThreshold = STRONG_FIT_THRESHOLDS.general;
+  if (generalScore < generalThreshold) {
     return {
       message:
         "General viability is below 19. Rework the boundary before moving ahead.",
@@ -515,23 +461,25 @@ export const getRecommendation = (
     };
   }
 
-  const hardStopIssues = HARD_STOP_IDS.filter((id) => answers[id] === 0);
-  if (hardStopIssues.length > 0) {
+  const hardRequirementIssues = HARD_REQUIREMENT_IDS.filter(
+    (id) => answers[id] === 0,
+  );
+  if (hardRequirementIssues.length > 0) {
     return {
       message:
-        "Resolve hard stops (ownership, domains, costs, or consumers) before building the product.",
+        "Resolve hard requirements before building the product:",
       status: "negative",
     };
   }
 
   const fits: string[] = [];
-  if (totals.source.score >= RECOMMENDATION_THRESHOLDS.source) {
+  if (totals.source.score >= STRONG_FIT_THRESHOLDS.source) {
     fits.push("source-aligned");
   }
-  if (totals.aggregate.score >= RECOMMENDATION_THRESHOLDS.aggregate) {
+  if (totals.aggregate.score >= STRONG_FIT_THRESHOLDS.aggregate) {
     fits.push("aggregate");
   }
-  if (totals.consumer.score >= RECOMMENDATION_THRESHOLDS.consumer) {
+  if (totals.consumer.score >= STRONG_FIT_THRESHOLDS.consumer) {
     fits.push("consumer-aligned");
   }
 

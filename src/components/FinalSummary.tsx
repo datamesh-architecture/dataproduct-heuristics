@@ -1,6 +1,6 @@
 import {
   AnswerMap,
-  HARD_STOP_IDS,
+  HARD_REQUIREMENT_IDS,
   QuestionStep,
   RecommendationResult,
   SECTION_META,
@@ -19,7 +19,7 @@ interface FinalSummaryProps {
 const questionSteps = STEPS.filter((step): step is QuestionStep => step.kind === 'question');
 
 const FinalSummary = ({ totals, answers, recommendation, onSelectQuestion }: FinalSummaryProps) => {
-  const hardStopIssues = HARD_STOP_IDS.filter((id) => answers[id] === 0);
+  const hardRequirementIssues = HARD_REQUIREMENT_IDS.filter((id) => answers[id] === 0);
   const statusToClasses = {
     positive: {
       box: 'border-emerald-600/70 bg-emerald-500/10 text-emerald-50',
@@ -43,6 +43,24 @@ const FinalSummary = ({ totals, answers, recommendation, onSelectQuestion }: Fin
       <div className={`mt-4 rounded-xl border p-4 ${currentStatus.box}`}>
         <p className={`text-sm uppercase tracking-wide ${currentStatus.label}`}>Recommendation</p>
         <p className="mt-1 text-lg font-medium">{recommendation.message}</p>
+        {hardRequirementIssues.length > 0 && (
+          <ul className="mt-2 space-y-1">
+            {hardRequirementIssues.map((id) => {
+              const step = questionSteps.find((item) => item.id === id);
+              return (
+                <li key={id}>
+                  <button
+                    type="button"
+                    onClick={() => onSelectQuestion?.(id)}
+                    className="text-left text-sky-300 underline decoration-sky-400 underline-offset-2 transition hover:text-sky-200"
+                  >
+                    {step?.prompt ?? id}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -55,20 +73,6 @@ const FinalSummary = ({ totals, answers, recommendation, onSelectQuestion }: Fin
             </div>
           );
         })}
-      </div>
-
-      <div className="mt-6 rounded-lg border border-slate-800 p-4">
-        <p className="text-sm font-semibold text-slate-200">Hard stop check</p>
-        {hardStopIssues.length === 0 ? (
-          <p className="mt-1 text-sm text-emerald-400">No hard stops triggered.</p>
-        ) : (
-          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-rose-300">
-            {hardStopIssues.map((id) => {
-              const step = questionSteps.find((item) => item.id === id);
-              return <li key={id}>{step?.prompt ?? id}</li>;
-            })}
-          </ul>
-        )}
       </div>
 
       <div className="mt-6 overflow-auto rounded-xl border border-slate-800">

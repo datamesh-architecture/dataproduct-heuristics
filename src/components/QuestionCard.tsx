@@ -1,5 +1,4 @@
-import { QuestionStep } from '../data/heuristics';
-import { getScaleLabels } from '../data/heuristics';
+import { HARD_REQUIREMENT_IDS, QuestionStep, getScaleLabels } from '../data/heuristics';
 
 interface QuestionCardProps {
   step: QuestionStep;
@@ -12,10 +11,18 @@ const baseButtonStyles =
 
 const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => {
   const labels = getScaleLabels(step.maxScore);
+  const isHardRequirement = HARD_REQUIREMENT_IDS.includes(step.id);
 
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl shadow-slate-900/40">
-      <p className="text-xs uppercase tracking-wide text-slate-400">{step.groupTitle}</p>
+      <div className="flex min-h-[28px] flex-wrap items-center gap-3">
+        <p className="text-xs uppercase tracking-wide text-slate-400">{step.groupTitle}</p>
+        {isHardRequirement && (
+          <span className="rounded-full border border-amber-400/80 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-200">
+            Hard requirement
+          </span>
+        )}
+      </div>
       <h2 className="mt-2 text-2xl font-semibold text-white">{step.prompt}</h2>
       <p className="mt-2 text-sm text-slate-400">Select the statement that best matches your reality.</p>
       <div className="mt-6 grid gap-3">
