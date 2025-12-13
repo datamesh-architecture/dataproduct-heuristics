@@ -393,6 +393,12 @@ export const STRONG_FIT_THRESHOLDS: Record<SectionId, number> = {
   consumer: 13,
 };
 
+const ARCHETYPE_LABELS: Record<ArchetypeId, string> = {
+  source: "source-aligned",
+  aggregate: "aggregate",
+  consumer: "consumer-aligned",
+};
+
 export const getQualifiedArchetypes = (
   totals: ReturnType<typeof getSectionTotals>,
   archetypes: ArchetypeId[] = ARCHETYPE_IDS,
@@ -499,7 +505,7 @@ export const getRecommendation = (
   const hardRequirementIssues = getHardRequirementIssues(answers);
   const qualifiedArchetypes = getQualifiedArchetypes(totals, archetypes);
   const formatArchetypeLabel = (archetypeId: ArchetypeId) =>
-    archetypeId === "source" ? "source-aligned" : archetypeId;
+    ARCHETYPE_LABELS[archetypeId];
 
   const blockingHardRequirements = hardRequirementIssues.filter((issue) => {
     if (issue.sectionId === "general") {
@@ -519,9 +525,7 @@ export const getRecommendation = (
     };
   }
 
-  const fits: string[] = qualifiedArchetypes.map((archetypeId) =>
-    archetypeId === "source" ? "source-aligned" : archetypeId,
-  );
+  const fits: string[] = qualifiedArchetypes.map(formatArchetypeLabel);
 
   if (fits.length === 0) {
     return {

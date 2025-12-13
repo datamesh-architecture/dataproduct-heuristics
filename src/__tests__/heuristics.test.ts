@@ -59,6 +59,19 @@ describe('getRecommendation', () => {
     expect(result.status).toBe('positive');
   });
 
+  it('labels consumer recommendations with consumer-aligned wording', () => {
+    const totals: SectionTotals = {
+      ...baseTotals,
+      general: { score: 20, max: 22 },
+      consumer: { score: STRONG_FIT_THRESHOLDS.consumer + 1, max: 18 },
+    };
+
+    const result = getRecommendation(totals, safeAnswers);
+
+    expect(result.message).toBe('Build a consumer-aligned data product.');
+    expect(result.status).toBe('positive');
+  });
+
   it('mentions qualifying archetype when blocked by a hard requirement', () => {
     const totals: SectionTotals = {
       general: { score: 20, max: 22 },
