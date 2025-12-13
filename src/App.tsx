@@ -333,28 +333,28 @@ const App = () => {
   })();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-900">
       <div className="mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-8 sm:px-6 lg:px-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white">Autonomous Data Product Heuristics</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Autonomous Data Product Heuristics</h1>
           </div>
           <button
             type="button"
             onClick={clearAll}
-            className="self-start rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-100 transition hover:border-slate-400 hover:text-white"
+            className="self-start rounded-full border border-slate-300 bg-white px-4 py-2 text-sm text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
           >
             Start over
           </button>
         </header>
 
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900/60 p-5">
-          <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
+        <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
+          <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
             <span>
               Step {effectiveIndex + 1} / {totalSteps}
             </span>
           </div>
-          <div className="mt-3 h-2 rounded-full bg-slate-800">
+          <div className="mt-3 h-2 rounded-full bg-slate-200">
             <div
               className="h-full rounded-full bg-sky-500 transition-all"
               style={{ width: `${currentProgress}%` }}
@@ -364,14 +364,14 @@ const App = () => {
 
         <main className="mt-6 flex-1">{renderStep(currentStep)}</main>
 
-        <footer className="mt-6 flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="mt-6 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
           <div />
           <div className="flex flex-wrap gap-3">
             {allQuestionsAnswered && currentStep.kind === 'question' && (
               <button
                 type="button"
                 onClick={goToSummary}
-                className="rounded-full border border-emerald-500/60 px-5 py-2 text-sm font-medium text-emerald-200 transition hover:border-emerald-400 hover:text-emerald-100"
+                className="rounded-full border border-emerald-300 bg-white px-5 py-2 text-sm font-medium text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800"
               >
                 Jump to summary
               </button>
@@ -379,7 +379,7 @@ const App = () => {
             <button
               type="button"
               onClick={goBack}
-              className="rounded-full border border-slate-700 px-5 py-2 text-sm text-slate-100 transition hover:border-slate-400"
+              className="rounded-full border border-slate-300 bg-white px-5 py-2 text-sm text-slate-600 transition hover:border-slate-400 hover:text-slate-900"
               disabled={isOnFirstStep}
             >
               Back
@@ -388,7 +388,7 @@ const App = () => {
               <button
                 type="button"
                 onClick={goNext}
-                className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+                className="rounded-full bg-sky-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400"
                 disabled={!canProceed || isLastStep}
               >
                 {currentStep.kind === 'question' ? 'Next' : 'Continue'}
