@@ -229,9 +229,7 @@ const App = () => {
         <main className="mt-6 flex-1">{renderStep(currentStep)}</main>
 
         <footer className="mt-6 flex flex-col gap-3 border-t border-slate-800 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-slate-400">
-            Unsaved? Never. Inputs sync to your browser automatically.
-          </div>
+          <div />
           <div className="flex flex-wrap gap-3">
             {allQuestionsAnswered && currentStep.kind === 'question' && (
               <button
