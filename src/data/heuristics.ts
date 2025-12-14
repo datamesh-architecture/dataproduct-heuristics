@@ -56,17 +56,17 @@ const createQuestion = (
 
 const generalQuestions: QuestionStep[] = [
   createQuestion(
-    "general-clear-teams",
-    "general",
-    "Clear consumer & use case",
-    "Are there any specific teams or roles that want to use this product right now?",
-    2,
-  ),
-  createQuestion(
     "general-purpose-one-sentence",
     "general",
     "Clear consumer & use case",
     "Can you describe the main purpose in one sentence?",
+    2,
+  ),
+  createQuestion(
+    "general-clear-teams",
+    "general",
+    "Clear consumer & use case",
+    "Are there any specific teams or roles that want to use this product right now?",
     2,
   ),
   createQuestion(
