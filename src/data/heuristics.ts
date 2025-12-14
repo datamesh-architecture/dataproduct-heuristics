@@ -8,6 +8,7 @@ export interface QuestionStep {
   groupTitle: string;
   prompt: string;
   maxScore: 1 | 2 | 3;
+  isHardRequirement?: boolean;
 }
 
 export interface SummaryStep {
@@ -45,6 +46,7 @@ const createQuestion = (
   groupTitle: string,
   prompt: string,
   maxScore: QuestionStep["maxScore"],
+  options: { isHardRequirement?: boolean } = {},
 ): QuestionStep => ({
   kind: "question",
   id,
@@ -52,6 +54,7 @@ const createQuestion = (
   groupTitle,
   prompt,
   maxScore,
+  isHardRequirement: options.isHardRequirement ?? false,
 });
 
 const calculateMaxPoints = (questions: QuestionStep[]) =>
@@ -78,6 +81,7 @@ const generalQuestions: QuestionStep[] = [
     "Stable ownership",
     "Is one specific domain or team accountable for semantics, quality, and operations?",
     2,
+    { isHardRequirement: true },
   ),
   createQuestion(
     "general-future-owner",
@@ -151,6 +155,7 @@ const sourceQuestions: QuestionStep[] = [
     "Source-aligned",
     "Does the cut follow meaningful domain modules rather than whole systems?",
     2,
+    { isHardRequirement: true },
   ),
   createQuestion(
     "source-local-dimensions",
@@ -203,6 +208,7 @@ const aggregateQuestions: QuestionStep[] = [
     "Aggregate",
     "Is there someone in the company willing to bear the costs of this data product?",
     3,
+    { isHardRequirement: true },
   ),
   createQuestion(
     "aggregate-tight-scope",
@@ -276,6 +282,7 @@ const consumerQuestions: QuestionStep[] = [
     "Consumer-aligned",
     "Are there clear business consumers who need this product now?",
     2,
+    { isHardRequirement: true },
   ),
 ];
 
@@ -376,13 +383,6 @@ export const DEFAULT_ARCHETYPE_SELECTION: ArchetypeSelectionMap = {
   consumer: true,
 };
 
-export const HARD_REQUIREMENT_IDS: readonly QuestionStep["id"][] = [
-  "general-single-owner",
-  "source-domain-modules",
-  "aggregate-cost-owner",
-  "consumer-business-consumers",
-];
-
 const ARCHETYPE_LABELS: Record<ArchetypeId, string> = {
   source: "source-aligned",
   aggregate: "aggregate",
@@ -467,12 +467,14 @@ export const findFirstUnansweredIndex = (
 
 export const getHardRequirementIssues = (
   answers: AnswerMap,
+  steps: Step[] = STEPS,
 ): QuestionStep[] => {
-  const hardRequirementIssues = HARD_REQUIREMENT_IDS.map(
-    (id) => STEPS.find((step) => step.id === id) as QuestionStep,
-  ).filter(
-    (questionStep) => answers[questionStep.id] < questionStep?.maxScore,
-  );
+  const hardRequirementIssues = steps
+    .filter(
+      (step): step is QuestionStep =>
+        step.kind === "question" && step.isHardRequirement == true,
+    )
+    .filter((questionStep) => answers[questionStep.id] < questionStep.maxScore);
 
   return hardRequirementIssues;
 };

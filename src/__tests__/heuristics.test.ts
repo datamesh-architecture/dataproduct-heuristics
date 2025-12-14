@@ -1,8 +1,8 @@
 import {
-  HARD_REQUIREMENT_IDS,
   STEPS,
   type AnswerMap,
   type SectionId,
+  type QuestionStep,
   getRecommendation,
   getSectionTotals,
   getStrongFitThreshold,
@@ -24,12 +24,12 @@ const baseTotals: SectionTotals = {
   consumer: { score: 0, max: totalsTemplate.consumer.max },
 };
 
-const safeAnswers: AnswerMap = HARD_REQUIREMENT_IDS.reduce<AnswerMap>((acc, id) => {
-  const question = STEPS.find((step) => step.id === id && step.kind === 'question');
-  if (!question || question.kind !== 'question') {
-    throw new Error(`Hard requirement id ${id} does not match a question step.`);
-  }
-  acc[id] = question.maxScore;
+const hardRequirementQuestions = STEPS.filter(
+  (step): step is QuestionStep => step.kind === 'question' && step.isHardRequirement
+);
+
+const safeAnswers: AnswerMap = hardRequirementQuestions.reduce<AnswerMap>((acc, question) => {
+  acc[question.id] = question.maxScore;
   return acc;
 }, {});
 

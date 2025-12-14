@@ -1,4 +1,4 @@
-import { HARD_REQUIREMENT_IDS, QuestionStep, getScaleLabels } from '../data/heuristics';
+import { QuestionStep, getScaleLabels } from '../data/heuristics';
 
 interface QuestionCardProps {
   step: QuestionStep;
@@ -11,7 +11,7 @@ const baseButtonStyles =
 
 const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => {
   const labels = getScaleLabels(step.maxScore);
-  const isHardRequirement = HARD_REQUIREMENT_IDS.includes(step.id);
+  const isHardRequirement = step.isHardRequirement ?? false;
   const answerOptions = labels
     .map((label, value) => ({ label, value }))
     .reverse(); // show most positive option first without changing stored values
