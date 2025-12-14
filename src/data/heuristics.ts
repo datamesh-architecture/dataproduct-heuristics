@@ -54,6 +54,9 @@ const createQuestion = (
   maxScore,
 });
 
+const calculateMaxPoints = (questions: QuestionStep[]) =>
+  questions.reduce((total, question) => total + question.maxScore, 0);
+
 const generalQuestions: QuestionStep[] = [
   createQuestion(
     "general-purpose-one-sentence",
@@ -297,6 +300,28 @@ const consumerQuestions: QuestionStep[] = [
   ),
 ];
 
+const SECTION_MAX_POINTS: Record<SectionId, number> = {
+  general: calculateMaxPoints(generalQuestions),
+  source: calculateMaxPoints(sourceQuestions),
+  aggregate: calculateMaxPoints(aggregateQuestions),
+  consumer: calculateMaxPoints(consumerQuestions),
+};
+
+export const STRONG_FIT_THRESHOLD_FACTORS: Record<SectionId, number> = {
+  general: 0.85,
+  source: 0.7,
+  aggregate: 0.8,
+  consumer: 0.7,
+};
+
+export const getStrongFitThreshold = (sectionId: SectionId): number =>
+  Math.round(SECTION_MAX_POINTS[sectionId] * STRONG_FIT_THRESHOLD_FACTORS[sectionId]);
+
+const generalStrongFitThreshold = getStrongFitThreshold("general");
+const sourceStrongFitThreshold = getStrongFitThreshold("source");
+const aggregateStrongFitThreshold = getStrongFitThreshold("aggregate");
+const consumerStrongFitThreshold = getStrongFitThreshold("consumer");
+
 const summarySteps: SummaryStep[] = [
   {
     kind: "summary",
@@ -304,8 +329,8 @@ const summarySteps: SummaryStep[] = [
     sectionId: "general",
     title: "General viability summary",
     description: [
-      "General score < 17 → This is not a data product yet. Rework the boundary first.",
-      "General score ≥ 17 → Proceed to the archetype checks.",
+      `General score < ${generalStrongFitThreshold} → This is not a data product yet. Rework the boundary first.`,
+      `General score ≥ ${generalStrongFitThreshold} → Proceed to the archetype checks.`,
     ],
     note: "Score honestly and look for clear signals, not perfection.",
   },
@@ -314,21 +339,21 @@ const summarySteps: SummaryStep[] = [
     id: "source-summary",
     sectionId: "source",
     title: "Source-aligned summary",
-    description: ["Score ≥ 9 indicates a strong source-aligned fit."],
+    description: [`Score ≥ ${sourceStrongFitThreshold} indicates a strong source-aligned fit.`],
   },
   {
     kind: "summary",
     id: "aggregate-summary",
     sectionId: "aggregate",
     title: "Aggregate summary",
-    description: ["Score ≥ 18 indicates a strong aggregate fit."],
+    description: [`Score ≥ ${aggregateStrongFitThreshold} indicates a strong aggregate fit.`],
   },
   {
     kind: "summary",
     id: "consumer-summary",
     sectionId: "consumer",
     title: "Consumer-aligned summary",
-    description: ["Score ≥ 13 indicates a strong consumer-aligned fit."],
+    description: [`Score ≥ ${consumerStrongFitThreshold} indicates a strong consumer-aligned fit.`],
   },
 ];
 
@@ -379,13 +404,6 @@ export const HARD_REQUIREMENT_IDS: readonly QuestionStep["id"][] = [
   "consumer-business-consumers",
 ];
 
-export const STRONG_FIT_THRESHOLDS: Record<SectionId, number> = {
-  general: 17,
-  source: 9,
-  aggregate: 18,
-  consumer: 13,
-};
-
 const ARCHETYPE_LABELS: Record<ArchetypeId, string> = {
   source: "source-aligned",
   aggregate: "aggregate",
@@ -399,7 +417,7 @@ export const getQualifiedArchetypes = (
   ARCHETYPE_IDS.filter(
     (archetypeId) =>
       archetypes.includes(archetypeId) &&
-      totals[archetypeId].score >= STRONG_FIT_THRESHOLDS[archetypeId],
+      totals[archetypeId].score >= getStrongFitThreshold(archetypeId),
   );
 
 export const getScaleLabels = (
@@ -486,11 +504,11 @@ export const getRecommendation = (
   archetypes: ArchetypeId[] = ARCHETYPE_IDS,
 ): RecommendationResult => {
   const generalScore = totals.general.score;
-  const generalThreshold = STRONG_FIT_THRESHOLDS.general;
+  const generalThreshold = generalStrongFitThreshold;
   if (generalScore < generalThreshold) {
     return {
       message:
-        "General viability is below 19. Rework the boundary before moving ahead.",
+        `General viability is below ${generalThreshold}. Rework the boundary before moving ahead.`,
       status: "negative",
     };
   }

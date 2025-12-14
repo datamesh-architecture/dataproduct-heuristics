@@ -1,9 +1,9 @@
 import {
   AnswerMap,
   SectionId,
-  STRONG_FIT_THRESHOLDS,
   SummaryStep,
   getHardRequirementIssues,
+  getStrongFitThreshold,
 } from '../data/heuristics';
 
 interface SummaryCardProps {
@@ -22,8 +22,8 @@ const SummaryCard = ({
   onGoToSummary,
 }: SummaryCardProps) => {
   const sectionTotal = totals[step.sectionId];
-  const threshold = STRONG_FIT_THRESHOLDS[step.sectionId];
-  const isStrongFit = threshold !== undefined && sectionTotal.score >= threshold;
+  const threshold = getStrongFitThreshold(step.sectionId);
+  const isStrongFit = sectionTotal.score >= threshold;
   const hardRequirementIssues = getHardRequirementIssues(answers).filter(
     (issue) => issue.sectionId === step.sectionId
   );
@@ -35,17 +35,15 @@ const SummaryCard = ({
         <span className="rounded-full border border-slate-200 px-3 py-1">
           {sectionTotal.score} / {sectionTotal.max} pts
         </span>
-        {threshold !== undefined && (
-          <span
-            className={`rounded-full border px-3 py-1 font-medium ${
-              isStrongFit
-                ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                : 'border-rose-300 bg-rose-50 text-rose-700'
-            }`}
-          >
-            {isStrongFit ? 'Strong fit' : 'Not a strong fit'}
-          </span>
-        )}
+        <span
+          className={`rounded-full border px-3 py-1 font-medium ${
+            isStrongFit
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+              : 'border-rose-300 bg-rose-50 text-rose-700'
+          }`}
+        >
+          {isStrongFit ? 'Strong fit' : 'Not a strong fit'}
+        </span>
       </div>
       <ul className="mt-4 list-disc space-y-2 pl-5 text-slate-700">
         {step.description.map((line) => (

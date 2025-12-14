@@ -1,18 +1,24 @@
 import {
   HARD_REQUIREMENT_IDS,
   STEPS,
-  STRONG_FIT_THRESHOLDS,
   type AnswerMap,
   type SectionId,
   getRecommendation,
   getSectionTotals,
+  getStrongFitThreshold,
 } from '../data/heuristics';
 
 type SectionTotals = Record<SectionId, { score: number; max: number }>;
 
 const totalsTemplate = getSectionTotals({}, STEPS);
+const strongFitThresholds: Record<SectionId, number> = {
+  general: getStrongFitThreshold('general'),
+  source: getStrongFitThreshold('source'),
+  aggregate: getStrongFitThreshold('aggregate'),
+  consumer: getStrongFitThreshold('consumer'),
+};
 const baseTotals: SectionTotals = {
-  general: { score: STRONG_FIT_THRESHOLDS.general + 2, max: totalsTemplate.general.max },
+  general: { score: strongFitThresholds.general + 2, max: totalsTemplate.general.max },
   source: { score: 0, max: totalsTemplate.source.max },
   aggregate: { score: 0, max: totalsTemplate.aggregate.max },
   consumer: { score: 0, max: totalsTemplate.consumer.max },
@@ -32,8 +38,8 @@ describe('getRecommendation', () => {
     const totals: SectionTotals = {
       ...baseTotals,
       general: { score: 20, max: totalsTemplate.general.max },
-      source: { score: STRONG_FIT_THRESHOLDS.source + 1, max: totalsTemplate.source.max },
-      aggregate: { score: STRONG_FIT_THRESHOLDS.aggregate + 1, max: totalsTemplate.aggregate.max },
+      source: { score: strongFitThresholds.source + 1, max: totalsTemplate.source.max },
+      aggregate: { score: strongFitThresholds.aggregate + 1, max: totalsTemplate.aggregate.max },
     };
 
     const result = getRecommendation(totals, safeAnswers);
@@ -45,7 +51,7 @@ describe('getRecommendation', () => {
   it('ignores broken hard requirements for archetypes that do not meet thresholds', () => {
     const totals: SectionTotals = {
       general: { score: 20, max: totalsTemplate.general.max },
-      source: { score: STRONG_FIT_THRESHOLDS.source + 1, max: totalsTemplate.source.max },
+      source: { score: strongFitThresholds.source + 1, max: totalsTemplate.source.max },
       aggregate: { score: 5, max: totalsTemplate.aggregate.max },
       consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
@@ -65,7 +71,7 @@ describe('getRecommendation', () => {
     const totals: SectionTotals = {
       ...baseTotals,
       general: { score: 20, max: totalsTemplate.general.max },
-      consumer: { score: STRONG_FIT_THRESHOLDS.consumer + 1, max: totalsTemplate.consumer.max },
+      consumer: { score: strongFitThresholds.consumer + 1, max: totalsTemplate.consumer.max },
     };
 
     const result = getRecommendation(totals, safeAnswers);
@@ -77,7 +83,7 @@ describe('getRecommendation', () => {
   it('mentions qualifying archetype when blocked by a hard requirement', () => {
     const totals: SectionTotals = {
       general: { score: 20, max: totalsTemplate.general.max },
-      source: { score: STRONG_FIT_THRESHOLDS.source + 2, max: totalsTemplate.source.max },
+      source: { score: strongFitThresholds.source + 2, max: totalsTemplate.source.max },
       aggregate: { score: 0, max: totalsTemplate.aggregate.max },
       consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
@@ -98,7 +104,7 @@ describe('getRecommendation', () => {
   it('handles hard requirements when no archetype qualifies', () => {
     const totals: SectionTotals = {
       general: { score: 20, max: totalsTemplate.general.max },
-      source: { score: STRONG_FIT_THRESHOLDS.source - 1, max: totalsTemplate.source.max },
+      source: { score: strongFitThresholds.source - 1, max: totalsTemplate.source.max },
       aggregate: { score: 0, max: totalsTemplate.aggregate.max },
       consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
@@ -119,7 +125,7 @@ describe('getRecommendation', () => {
   it('does not surface hard requirements for archetypes that are not qualified', () => {
     const totals: SectionTotals = {
       general: { score: 20, max: totalsTemplate.general.max },
-      source: { score: STRONG_FIT_THRESHOLDS.source - 1, max: totalsTemplate.source.max },
+      source: { score: strongFitThresholds.source - 1, max: totalsTemplate.source.max },
       aggregate: { score: 0, max: totalsTemplate.aggregate.max },
       consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
