@@ -235,20 +235,6 @@ const aggregateQuestions: QuestionStep[] = [
 
 const consumerQuestions: QuestionStep[] = [
   createQuestion(
-    "consumer-specific-job",
-    "consumer",
-    "Consumer-aligned",
-    "Does the product serve one specific job to be done?",
-    2,
-  ),
-  createQuestion(
-    "consumer-exact-data",
-    "consumer",
-    "Consumer-aligned",
-    "Does the product provide exactly the data and semantics needed for that job and does not serve a general purpose?",
-    2,
-  ),
-  createQuestion(
     "consumer-verb-object",
     "consumer",
     "Consumer-aligned",
