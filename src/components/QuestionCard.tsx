@@ -12,6 +12,9 @@ const baseButtonStyles =
 const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => {
   const labels = getScaleLabels(step.maxScore);
   const isHardRequirement = HARD_REQUIREMENT_IDS.includes(step.id);
+  const answerOptions = labels
+    .map((label, value) => ({ label, value }))
+    .reverse(); // show most positive option first without changing stored values
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
@@ -26,8 +29,8 @@ const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => 
       <h2 className="mt-2 text-2xl font-semibold text-slate-900">{step.prompt}</h2>
       <p className="mt-2 text-sm text-slate-600">Select the statement that best matches your reality.</p>
       <div className="mt-6 grid gap-3">
-        {labels.map((label, index) => {
-          const isSelected = selectedAnswer === index;
+        {answerOptions.map(({ label, value }) => {
+          const isSelected = selectedAnswer === value;
           const buttonClasses = `${baseButtonStyles} ${
             isSelected
               ? 'border-sky-400 bg-sky-50 text-sky-900'
@@ -37,7 +40,7 @@ const QuestionCard = ({ step, selectedAnswer, onAnswer }: QuestionCardProps) => 
             <button
               key={label}
               type="button"
-              onClick={() => onAnswer(index)}
+              onClick={() => onAnswer(value)}
               className={buttonClasses}
               aria-pressed={isSelected}
             >
