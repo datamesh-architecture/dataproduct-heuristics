@@ -132,13 +132,6 @@ const generalQuestions: QuestionStep[] = [
 
 const sourceQuestions: QuestionStep[] = [
   createQuestion(
-    "source-stable-package",
-    "source",
-    "Source-aligned",
-    "Do the data elements belong together from a consumer perspective and form a stable package?",
-    2,
-  ),
-  createQuestion(
     "source-standalone-sense",
     "source",
     "Source-aligned",
@@ -205,13 +198,6 @@ const aggregateQuestions: QuestionStep[] = [
     2,
   ),
   createQuestion(
-    "aggregate-high-quality-derivation",
-    "aggregate",
-    "Aggregate",
-    "Is a single high-quality derivation more efficient than duplicating logic across teams?",
-    2,
-  ),
-  createQuestion(
     "aggregate-cost-owner",
     "aggregate",
     "Aggregate",
@@ -274,7 +260,7 @@ const consumerQuestions: QuestionStep[] = [
     "consumer-process-boundary",
     "consumer",
     "Consumer-aligned",
-    "Does the boundary follow a process and not a system boundary?",
+    "Does the boundary follow a business process and not a system boundary?",
     2,
   ),
   createQuestion(
@@ -289,13 +275,6 @@ const consumerQuestions: QuestionStep[] = [
     "consumer",
     "Consumer-aligned",
     "Are there clear business consumers who need this product now?",
-    2,
-  ),
-  createQuestion(
-    "consumer-not-speculative",
-    "consumer",
-    "Consumer-aligned",
-    "Does the product contain only what is required for the use case, not speculative additions?",
     2,
   ),
 ];
