@@ -25,7 +25,7 @@ const baseTotals: SectionTotals = {
 };
 
 const hardRequirementQuestions = STEPS.filter(
-  (step): step is QuestionStep => step.kind === 'question' && step.isHardRequirement
+  (step): step is QuestionStep => step.kind === 'question' && step.isHardRequirement === true
 );
 
 const safeAnswers: AnswerMap = hardRequirementQuestions.reduce<AnswerMap>((acc, question) => {
