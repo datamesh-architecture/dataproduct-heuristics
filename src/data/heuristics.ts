@@ -167,7 +167,7 @@ const sourceQuestions: QuestionStep[] = [
     "source-isolated-changes",
     "source",
     "Source-aligned",
-    "Do source changes impact more than one data product?",
+    "Do changes on the data source impact only this data product?",
     2,
   ),
 ];
