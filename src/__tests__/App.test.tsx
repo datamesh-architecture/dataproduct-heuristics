@@ -14,7 +14,16 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    const continueButton = screen.getByRole('button', { name: 'Continue' });
+    expect(continueButton).toBeDisabled();
+
+    await user.click(
+      screen.getByRole('button', {
+        name: /Would you like the data product to expose data from a production service or an external system\?/i,
+      })
+    );
+
+    await user.click(continueButton);
 
     expect(screen.getByText(questionSteps[0].prompt)).toBeInTheDocument();
 
@@ -30,6 +39,11 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(
+      screen.getByRole('button', {
+        name: /Would you like the data product to expose data from a production service or an external system\?/i,
+      })
+    );
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     await user.click(screen.getByRole('button', { name: 'Partially / unclear' }));
     await user.click(screen.getByRole('button', { name: 'Back' }));
@@ -93,13 +107,18 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App />);
 
-    await user.click(screen.getByRole('button', { name: /Source-aligned/i }));
-    await user.click(screen.getByRole('button', { name: /Consumer-aligned/i }));
-
     const continueButton = screen.getByRole('button', { name: 'Continue' });
+
     expect(continueButton).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: /Source-aligned/i }));
+    const sourceQuestion = screen.getByRole('button', {
+      name: /Would you like the data product to expose data from a production service or an external system\?/i,
+    });
+
+    await user.click(sourceQuestion);
     expect(continueButton).toBeEnabled();
+
+    await user.click(sourceQuestion);
+    expect(continueButton).toBeDisabled();
   });
 });

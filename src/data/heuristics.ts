@@ -262,14 +262,6 @@ const consumerQuestions: QuestionStep[] = [
     "Does the cut reflect how a consumer acts or decides, not how data happens to be stored?",
     2,
   ),
-  createQuestion(
-    "consumer-business-consumers",
-    "consumer",
-    "Consumer-aligned",
-    "Are there clear business consumers who need this product now?",
-    2,
-    { isHardRequirement: true },
-  ),
 ];
 
 const SECTION_MAX_POINTS: Record<SectionId, number> = {
@@ -364,9 +356,9 @@ export const SECTION_QUESTION_IDS: Record<SectionId, string[]> = {
 export const ARCHETYPE_IDS: ArchetypeId[] = ["source", "aggregate", "consumer"];
 export type ArchetypeSelectionMap = Record<ArchetypeId, boolean>;
 export const DEFAULT_ARCHETYPE_SELECTION: ArchetypeSelectionMap = {
-  source: true,
+  source: false,
   aggregate: false,
-  consumer: true,
+  consumer: false,
 };
 
 const ARCHETYPE_LABELS: Record<ArchetypeId, string> = {

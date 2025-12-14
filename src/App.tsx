@@ -77,13 +77,17 @@ const sanitizeArchetypeSelection = (
 
 const deriveSelectionFromAnswers = (answers: AnswerMap): ArchetypeSelectionMap => {
   const derived = { ...DEFAULT_ARCHETYPE_SELECTION };
-  const aggregateAnswered = SECTION_QUESTION_IDS.aggregate.some(
-    (id) => answers[id] !== undefined
-  );
-  if (aggregateAnswered) {
-    derived.aggregate = true;
-  }
-  return derived;
+  let hasArchetypeAnswer = false;
+
+  ARCHETYPE_IDS.forEach((id) => {
+    const hasAnswer = SECTION_QUESTION_IDS[id].some((questionId) => answers[questionId] !== undefined);
+    if (hasAnswer) {
+      derived[id] = true;
+      hasArchetypeAnswer = true;
+    }
+  });
+
+  return hasArchetypeAnswer ? derived : { ...DEFAULT_ARCHETYPE_SELECTION };
 };
 
 const isSectionBoundStep = (step: Step): step is QuestionStep | SummaryStep =>
@@ -338,7 +342,7 @@ const App = () => {
 
   const activeSectionTitle = (() => {
     if (currentStep.kind === 'archetype-selection') {
-      return 'Choose archetypes';
+      return 'Tell us about your data product';
     }
     if (currentStep.kind === 'question' || currentStep.kind === 'summary') {
       return SECTION_META[currentStep.sectionId].title;
