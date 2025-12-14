@@ -5,15 +5,17 @@ import {
   type AnswerMap,
   type SectionId,
   getRecommendation,
+  getSectionTotals,
 } from '../data/heuristics';
 
 type SectionTotals = Record<SectionId, { score: number; max: number }>;
 
+const totalsTemplate = getSectionTotals({}, STEPS);
 const baseTotals: SectionTotals = {
-  general: { score: 19, max: 22 },
-  source: { score: 0, max: 12 },
-  aggregate: { score: 0, max: 23 },
-  consumer: { score: 0, max: 18 },
+  general: { score: STRONG_FIT_THRESHOLDS.general + 2, max: totalsTemplate.general.max },
+  source: { score: 0, max: totalsTemplate.source.max },
+  aggregate: { score: 0, max: totalsTemplate.aggregate.max },
+  consumer: { score: 0, max: totalsTemplate.consumer.max },
 };
 
 const safeAnswers: AnswerMap = HARD_REQUIREMENT_IDS.reduce<AnswerMap>((acc, id) => {
@@ -29,9 +31,9 @@ describe('getRecommendation', () => {
   it('flags multiple archetype fits as a cautionary outcome', () => {
     const totals: SectionTotals = {
       ...baseTotals,
-      general: { score: 20, max: 22 },
-      source: { score: STRONG_FIT_THRESHOLDS.source + 1, max: 12 },
-      aggregate: { score: STRONG_FIT_THRESHOLDS.aggregate + 1, max: 23 },
+      general: { score: 20, max: totalsTemplate.general.max },
+      source: { score: STRONG_FIT_THRESHOLDS.source + 1, max: totalsTemplate.source.max },
+      aggregate: { score: STRONG_FIT_THRESHOLDS.aggregate + 1, max: totalsTemplate.aggregate.max },
     };
 
     const result = getRecommendation(totals, safeAnswers);
@@ -42,10 +44,10 @@ describe('getRecommendation', () => {
 
   it('ignores broken hard requirements for archetypes that do not meet thresholds', () => {
     const totals: SectionTotals = {
-      general: { score: 20, max: 22 },
-      source: { score: STRONG_FIT_THRESHOLDS.source + 1, max: 12 },
-      aggregate: { score: 5, max: 23 },
-      consumer: { score: 0, max: 18 },
+      general: { score: 20, max: totalsTemplate.general.max },
+      source: { score: STRONG_FIT_THRESHOLDS.source + 1, max: totalsTemplate.source.max },
+      aggregate: { score: 5, max: totalsTemplate.aggregate.max },
+      consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
 
     const answers: AnswerMap = {
@@ -62,8 +64,8 @@ describe('getRecommendation', () => {
   it('labels consumer recommendations with consumer-aligned wording', () => {
     const totals: SectionTotals = {
       ...baseTotals,
-      general: { score: 20, max: 22 },
-      consumer: { score: STRONG_FIT_THRESHOLDS.consumer + 1, max: 18 },
+      general: { score: 20, max: totalsTemplate.general.max },
+      consumer: { score: STRONG_FIT_THRESHOLDS.consumer + 1, max: totalsTemplate.consumer.max },
     };
 
     const result = getRecommendation(totals, safeAnswers);
@@ -74,10 +76,10 @@ describe('getRecommendation', () => {
 
   it('mentions qualifying archetype when blocked by a hard requirement', () => {
     const totals: SectionTotals = {
-      general: { score: 20, max: 22 },
-      source: { score: STRONG_FIT_THRESHOLDS.source + 2, max: 12 },
-      aggregate: { score: 0, max: 23 },
-      consumer: { score: 0, max: 18 },
+      general: { score: 20, max: totalsTemplate.general.max },
+      source: { score: STRONG_FIT_THRESHOLDS.source + 2, max: totalsTemplate.source.max },
+      aggregate: { score: 0, max: totalsTemplate.aggregate.max },
+      consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
 
     const answers: AnswerMap = {
@@ -95,10 +97,10 @@ describe('getRecommendation', () => {
 
   it('handles hard requirements when no archetype qualifies', () => {
     const totals: SectionTotals = {
-      general: { score: 20, max: 22 },
-      source: { score: STRONG_FIT_THRESHOLDS.source - 1, max: 12 },
-      aggregate: { score: 0, max: 23 },
-      consumer: { score: 0, max: 18 },
+      general: { score: 20, max: totalsTemplate.general.max },
+      source: { score: STRONG_FIT_THRESHOLDS.source - 1, max: totalsTemplate.source.max },
+      aggregate: { score: 0, max: totalsTemplate.aggregate.max },
+      consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
 
     const answers: AnswerMap = {
@@ -116,10 +118,10 @@ describe('getRecommendation', () => {
 
   it('does not surface hard requirements for archetypes that are not qualified', () => {
     const totals: SectionTotals = {
-      general: { score: 20, max: 22 },
-      source: { score: STRONG_FIT_THRESHOLDS.source - 1, max: 12 },
-      aggregate: { score: 0, max: 23 },
-      consumer: { score: 0, max: 18 },
+      general: { score: 20, max: totalsTemplate.general.max },
+      source: { score: STRONG_FIT_THRESHOLDS.source - 1, max: totalsTemplate.source.max },
+      aggregate: { score: 0, max: totalsTemplate.aggregate.max },
+      consumer: { score: 0, max: totalsTemplate.consumer.max },
     };
 
     const answers: AnswerMap = {

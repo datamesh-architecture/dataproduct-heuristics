@@ -63,13 +63,6 @@ const generalQuestions: QuestionStep[] = [
     2,
   ),
   createQuestion(
-    "general-no-stitching",
-    "general",
-    "Clear consumer & use case",
-    "Can consumers use this without stitching data products together?",
-    2,
-  ),
-  createQuestion(
     "general-purpose-one-sentence",
     "general",
     "Clear consumer & use case",
@@ -311,8 +304,8 @@ const summarySteps: SummaryStep[] = [
     sectionId: "general",
     title: "General viability summary",
     description: [
-      "General score < 19 → This is not a data product yet. Rework the boundary first.",
-      "General score ≥ 19 → Proceed to the archetype checks.",
+      "General score < 17 → This is not a data product yet. Rework the boundary first.",
+      "General score ≥ 17 → Proceed to the archetype checks.",
     ],
     note: "Score honestly and look for clear signals, not perfection.",
   },
@@ -387,7 +380,7 @@ export const HARD_REQUIREMENT_IDS: readonly QuestionStep["id"][] = [
 ];
 
 export const STRONG_FIT_THRESHOLDS: Record<SectionId, number> = {
-  general: 19,
+  general: 17,
   source: 9,
   aggregate: 18,
   consumer: 13,

@@ -16,17 +16,13 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: 'Continue' }));
 
-    expect(
-      screen.getByText('Are there any specific teams or roles that want to use this product right now?')
-    ).toBeInTheDocument();
+    expect(screen.getByText(questionSteps[0].prompt)).toBeInTheDocument();
 
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
 
     await user.click(screen.getByRole('button', { name: 'Partially / unclear' }));
 
-    expect(
-      screen.getByText('Can consumers use this without stitching data products together?')
-    ).toBeInTheDocument();
+    expect(screen.getByText(questionSteps[1].prompt)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   });
 
@@ -49,9 +45,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(
-      screen.getByText('Can consumers use this without stitching data products together?')
-    ).toBeInTheDocument();
+    expect(screen.getByText(questionSteps[1].prompt)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Back' })).toBeEnabled();
   });
 
