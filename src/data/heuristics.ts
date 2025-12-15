@@ -282,9 +282,6 @@ export const getStrongFitThreshold = (sectionId: SectionId): number =>
   Math.round(SECTION_MAX_POINTS[sectionId] * STRONG_FIT_THRESHOLD_FACTORS[sectionId]);
 
 const generalStrongFitThreshold = getStrongFitThreshold("general");
-const sourceStrongFitThreshold = getStrongFitThreshold("source");
-const aggregateStrongFitThreshold = getStrongFitThreshold("aggregate");
-const consumerStrongFitThreshold = getStrongFitThreshold("consumer");
 
 const summarySteps: SummaryStep[] = [
   {
@@ -298,27 +295,6 @@ const summarySteps: SummaryStep[] = [
     ],
     note: "Score honestly and look for clear signals, not perfection.",
   },
-  {
-    kind: "summary",
-    id: "source-summary",
-    sectionId: "source",
-    title: "Source-aligned summary",
-    description: [`Score ≥ ${sourceStrongFitThreshold} indicates a strong source-aligned fit.`],
-  },
-  {
-    kind: "summary",
-    id: "aggregate-summary",
-    sectionId: "aggregate",
-    title: "Aggregate summary",
-    description: [`Score ≥ ${aggregateStrongFitThreshold} indicates a strong aggregate fit.`],
-  },
-  {
-    kind: "summary",
-    id: "consumer-summary",
-    sectionId: "consumer",
-    title: "Consumer-aligned summary",
-    description: [`Score ≥ ${consumerStrongFitThreshold} indicates a strong consumer-aligned fit.`],
-  },
 ];
 
 const finalStep: FinalStep = {
@@ -331,11 +307,8 @@ export const STEPS: Step[] = [
   ...generalQuestions,
   summarySteps[0],
   ...sourceQuestions,
-  summarySteps[1],
   ...aggregateQuestions,
-  summarySteps[2],
   ...consumerQuestions,
-  summarySteps[3],
   finalStep,
 ];
 
@@ -354,12 +327,8 @@ export const SECTION_QUESTION_IDS: Record<SectionId, string[]> = {
 };
 
 export const ARCHETYPE_IDS: ArchetypeId[] = ["source", "aggregate", "consumer"];
-export type ArchetypeSelectionMap = Record<ArchetypeId, boolean>;
-export const DEFAULT_ARCHETYPE_SELECTION: ArchetypeSelectionMap = {
-  source: false,
-  aggregate: false,
-  consumer: false,
-};
+export type SelectedArchetype = ArchetypeId | null;
+export const DEFAULT_SELECTED_ARCHETYPE: SelectedArchetype = null;
 
 const ARCHETYPE_LABELS: Record<ArchetypeId, string> = {
   source: "source-aligned",
@@ -462,6 +431,15 @@ export const getRecommendation = (
   answers: AnswerMap,
   archetypes: ArchetypeId[] = ARCHETYPE_IDS,
 ): RecommendationResult => {
+  const formatArchetypeLabel = (archetypeId: ArchetypeId) =>
+    ARCHETYPE_LABELS[archetypeId];
+
+  const formatBuildMessage = (archetypeId: ArchetypeId) => {
+    const label = formatArchetypeLabel(archetypeId);
+    const article = /^[aeiou]/i.test(label) ? "an" : "a";
+    return `Build ${article} ${label} data product.`;
+  };
+
   const generalScore = totals.general.score;
   const generalThreshold = generalStrongFitThreshold;
   if (generalScore < generalThreshold) {
@@ -474,8 +452,6 @@ export const getRecommendation = (
 
   const hardRequirementIssues = getHardRequirementIssues(answers);
   const qualifiedArchetypes = getQualifiedArchetypes(totals, archetypes);
-  const formatArchetypeLabel = (archetypeId: ArchetypeId) =>
-    ARCHETYPE_LABELS[archetypeId];
 
   const blockingHardRequirements = hardRequirementIssues.filter((issue) => {
     if (issue.sectionId === "general") {
@@ -487,33 +463,23 @@ export const getRecommendation = (
   if (blockingHardRequirements.length > 0) {
     const qualifiedLabel =
       qualifiedArchetypes.length > 0
-        ? `Qualifies for ${qualifiedArchetypes.map(formatArchetypeLabel).join(", ")}, but `
-        : "No archetype qualifies yet; also ";
+        ? `Qualifies for ${formatArchetypeLabel(qualifiedArchetypes[0])}, but `
+        : "Archetype does not qualify yet; also ";
     return {
       message: `${qualifiedLabel}resolve hard requirements before building the product.`,
       status: "negative",
     };
   }
 
-  const fits: string[] = qualifiedArchetypes.map(formatArchetypeLabel);
-
-  if (fits.length === 0) {
+  if (qualifiedArchetypes.length === 0) {
     return {
-      message: "No archetype fit crossed the threshold. Redesign the cut.",
+      message: "Archetype does not qualify yet. Redesign the cut.",
       status: "negative",
     };
   }
 
-  if (fits.length === 1) {
-    return {
-      message: `Build a ${fits[0]} data product.`,
-      status: "positive",
-    };
-  }
-
   return {
-    message:
-      "Multiple archetypes qualify. Consider layering the products deliberately.",
-    status: "caution",
+    message: formatBuildMessage(qualifiedArchetypes[0]),
+    status: "positive",
   };
 };

@@ -34,7 +34,7 @@ const safeAnswers: AnswerMap = hardRequirementQuestions.reduce<AnswerMap>((acc, 
 }, {});
 
 describe('getRecommendation', () => {
-  it('flags multiple archetype fits as a cautionary outcome', () => {
+  it('bases the recommendation on the chosen archetype when multiple would qualify', () => {
     const totals: SectionTotals = {
       ...baseTotals,
       general: { score: 20, max: totalsTemplate.general.max },
@@ -42,10 +42,10 @@ describe('getRecommendation', () => {
       aggregate: { score: strongFitThresholds.aggregate + 1, max: totalsTemplate.aggregate.max },
     };
 
-    const result = getRecommendation(totals, safeAnswers);
+    const result = getRecommendation(totals, safeAnswers, ['aggregate']);
 
-    expect(result.message).toBe('Multiple archetypes qualify. Consider layering the products deliberately.');
-    expect(result.status).toBe('caution');
+    expect(result.message).toBe('Build an aggregate data product.');
+    expect(result.status).toBe('positive');
   });
 
   it('ignores broken hard requirements for archetypes that do not meet thresholds', () => {
@@ -61,7 +61,7 @@ describe('getRecommendation', () => {
       'aggregate-cost-owner': 0,
     };
 
-    const result = getRecommendation(totals, answers);
+    const result = getRecommendation(totals, answers, ['source']);
 
     expect(result.message).toBe('Build a source-aligned data product.');
     expect(result.status).toBe('positive');
@@ -74,7 +74,7 @@ describe('getRecommendation', () => {
       consumer: { score: strongFitThresholds.consumer + 1, max: totalsTemplate.consumer.max },
     };
 
-    const result = getRecommendation(totals, safeAnswers);
+    const result = getRecommendation(totals, safeAnswers, ['consumer']);
 
     expect(result.message).toBe('Build a consumer-aligned data product.');
     expect(result.status).toBe('positive');
@@ -93,7 +93,7 @@ describe('getRecommendation', () => {
       'source-domain-modules': 0,
     };
 
-    const result = getRecommendation(totals, answers);
+    const result = getRecommendation(totals, answers, ['source']);
 
     expect(result.message).toBe(
       'Qualifies for source-aligned, but resolve hard requirements before building the product.'
@@ -114,10 +114,10 @@ describe('getRecommendation', () => {
       'general-single-owner': 0,
     };
 
-    const result = getRecommendation(totals, answers);
+    const result = getRecommendation(totals, answers, ['source']);
 
     expect(result.message).toBe(
-      'No archetype qualifies yet; also resolve hard requirements before building the product.'
+      'Archetype does not qualify yet; also resolve hard requirements before building the product.'
     );
     expect(result.status).toBe('negative');
   });
@@ -135,9 +135,9 @@ describe('getRecommendation', () => {
       'source-domain-modules': 0,
     };
 
-    const result = getRecommendation(totals, answers);
+    const result = getRecommendation(totals, answers, ['source']);
 
-    expect(result.message).toBe('No archetype fit crossed the threshold. Redesign the cut.');
+    expect(result.message).toBe('Archetype does not qualify yet. Redesign the cut.');
     expect(result.status).toBe('negative');
   });
 });

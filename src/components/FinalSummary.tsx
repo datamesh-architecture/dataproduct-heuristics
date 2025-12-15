@@ -1,6 +1,7 @@
 import {
   AnswerMap,
   ArchetypeId,
+  SelectedArchetype,
   QuestionStep,
   RecommendationResult,
   SECTION_META,
@@ -15,8 +16,10 @@ interface FinalSummaryProps {
   recommendation: RecommendationResult;
   questionSteps: QuestionStep[];
   visibleSections: SectionId[];
-  recommendedArchetypes: ArchetypeId[];
+  selectedArchetype: SelectedArchetype;
+  recommendedArchetype: ArchetypeId | null;
   onSelectQuestion?: (questionId: string) => void;
+  onGoToArchetypeSelection?: () => void;
 }
 
 const FinalSummary = ({
@@ -25,12 +28,17 @@ const FinalSummary = ({
   recommendation,
   questionSteps,
   visibleSections,
-  recommendedArchetypes,
+  selectedArchetype,
+  recommendedArchetype,
   onSelectQuestion,
+  onGoToArchetypeSelection,
 }: FinalSummaryProps) => {
   const hardRequirementIssues = getHardRequirementIssues(answers);
+  const targetArchetype = recommendedArchetype ?? selectedArchetype;
   const displayedHardRequirementIssues = hardRequirementIssues.filter(
-    (issue) => issue.sectionId === 'general' || recommendedArchetypes.includes(issue.sectionId as ArchetypeId)
+    (issue) =>
+      issue.sectionId === 'general' ||
+      (targetArchetype ? issue.sectionId === targetArchetype : false)
   );
   const statusToClasses = {
     positive: {
@@ -51,6 +59,20 @@ const FinalSummary = ({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
       <h2 className="text-2xl font-semibold text-slate-900">Overall summary</h2>
+      <div className="mt-2 flex flex-wrap items-center gap-3">
+        {selectedArchetype && (
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-700">
+            Chosen archetype: {SECTION_META[selectedArchetype].title}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => onGoToArchetypeSelection?.()}
+          className="text-sm font-medium text-sky-600 underline decoration-sky-500 underline-offset-2 transition hover:text-sky-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400"
+        >
+          Change archetype selection
+        </button>
+      </div>
       <p className="mt-2 text-slate-600">All responses and their point values are listed below.</p>
       <div className={`mt-4 rounded-xl border p-4 ${currentStatus.box}`}>
         <p className={`text-sm uppercase tracking-wide ${currentStatus.label}`}>Recommendation</p>

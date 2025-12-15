@@ -64,18 +64,21 @@ describe('App', () => {
   });
 
   it('shows the final transparency table when every heuristic is answered', async () => {
-    const allAnswered = questionSteps.reduce<AnswerMap>((acc, step) => {
-      acc[step.id] = step.maxScore;
-      return acc;
-    }, {} as AnswerMap);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(allAnswered));
+    const aggregateAnswers = questionSteps
+      .filter((step) => step.sectionId === 'general' || step.sectionId === 'aggregate')
+      .reduce<AnswerMap>((acc, step) => {
+        acc[step.id] = step.maxScore;
+        return acc;
+      }, {} as AnswerMap);
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ answers: aggregateAnswers, selectedArchetype: 'aggregate' })
+    );
 
     render(<App />);
 
     expect(await screen.findByText('Overall summary')).toBeInTheDocument();
-    expect(
-      await screen.findByText('Multiple archetypes qualify. Consider layering the products deliberately.')
-    ).toBeInTheDocument();
+    expect(await screen.findByText('Build an aggregate data product.')).toBeInTheDocument();
 
     expect(
       (
@@ -118,7 +121,16 @@ describe('App', () => {
     await user.click(sourceQuestion);
     expect(continueButton).toBeEnabled();
 
-    await user.click(sourceQuestion);
+    const aggregateQuestion = screen.getByRole('button', {
+      name: /Is your data product an aggregation of data from various domains that should be consumed by other data products\?/i,
+    });
+
+    await user.click(aggregateQuestion);
+
+    expect(sourceQuestion).toHaveAttribute('aria-pressed', 'false');
+    expect(aggregateQuestion).toHaveAttribute('aria-pressed', 'true');
+
+    await user.click(aggregateQuestion);
     expect(continueButton).toBeDisabled();
   });
 });

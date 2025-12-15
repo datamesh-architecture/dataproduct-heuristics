@@ -5,7 +5,7 @@ import QuestionCard from './components/QuestionCard';
 import SummaryCard from './components/SummaryCard';
 import {
   ARCHETYPE_IDS,
-  DEFAULT_ARCHETYPE_SELECTION,
+  DEFAULT_SELECTED_ARCHETYPE,
   AnswerMap,
   STEPS,
   STORAGE_KEY,
@@ -16,8 +16,8 @@ import {
   SectionId,
   SECTION_META,
   QuestionStep,
-  ArchetypeSelectionMap,
   ArchetypeId,
+  SelectedArchetype,
   SECTION_QUESTION_IDS,
   SummaryStep,
   getQualifiedArchetypes,
@@ -26,7 +26,7 @@ import {
 interface StoredState {
   answers: AnswerMap;
   currentIndex?: number;
-  selectedArchetypes?: ArchetypeSelectionMap;
+  selectedArchetype?: SelectedArchetype;
 }
 
 interface ArchetypeSelectionStep {
@@ -57,59 +57,47 @@ const sanitizeAnswerMap = (value: unknown): AnswerMap => {
   );
 };
 
-const sanitizeArchetypeSelection = (
-  value: unknown
-): ArchetypeSelectionMap | undefined => {
+const sanitizeSelectedArchetype = (value: unknown): SelectedArchetype | undefined => {
+  if (typeof value === 'string' && ARCHETYPE_IDS.includes(value as ArchetypeId)) {
+    return value as ArchetypeId;
+  }
+
   if (!value || typeof value !== 'object') {
     return undefined;
   }
+
   const record = value as Record<string, unknown>;
-  let hasExplicitValue = false;
-  const selection: ArchetypeSelectionMap = { ...DEFAULT_ARCHETYPE_SELECTION };
-  ARCHETYPE_IDS.forEach((id) => {
-    if (typeof record[id] === 'boolean') {
-      selection[id] = record[id] as boolean;
-      hasExplicitValue = true;
-    }
-  });
-  return hasExplicitValue ? selection : undefined;
+  const selectedFromMap = ARCHETYPE_IDS.find((id) => record[id] === true);
+  return selectedFromMap ?? undefined;
 };
 
-const deriveSelectionFromAnswers = (answers: AnswerMap): ArchetypeSelectionMap => {
-  const derived = { ...DEFAULT_ARCHETYPE_SELECTION };
-  let hasArchetypeAnswer = false;
+const deriveSelectionFromAnswers = (answers: AnswerMap): SelectedArchetype => {
+  const firstArchetypeWithAnswers = ARCHETYPE_IDS.find((id) =>
+    SECTION_QUESTION_IDS[id].some((questionId) => answers[questionId] !== undefined)
+  );
 
-  ARCHETYPE_IDS.forEach((id) => {
-    const hasAnswer = SECTION_QUESTION_IDS[id].some((questionId) => answers[questionId] !== undefined);
-    if (hasAnswer) {
-      derived[id] = true;
-      hasArchetypeAnswer = true;
-    }
-  });
-
-  return hasArchetypeAnswer ? derived : { ...DEFAULT_ARCHETYPE_SELECTION };
+  return firstArchetypeWithAnswers ?? DEFAULT_SELECTED_ARCHETYPE;
 };
 
 const isSectionBoundStep = (step: Step): step is QuestionStep | SummaryStep =>
   step.kind === 'question' || step.kind === 'summary';
 
-const shouldIncludeStep = (step: Step, selection: ArchetypeSelectionMap) => {
+const shouldIncludeStep = (step: Step, selectedArchetype: SelectedArchetype) => {
   if (!isSectionBoundStep(step)) {
     return true;
   }
   if (step.sectionId === 'general') {
     return true;
   }
-  const archetypeId = step.sectionId as ArchetypeId;
-  return selection[archetypeId];
+  return selectedArchetype === step.sectionId;
 };
 
-const getContentSteps = (selection: ArchetypeSelectionMap): Step[] =>
-  STEPS.filter((step) => shouldIncludeStep(step, selection));
+const getContentSteps = (selectedArchetype: SelectedArchetype): Step[] =>
+  STEPS.filter((step) => shouldIncludeStep(step, selectedArchetype));
 
-const getFlowSteps = (selection: ArchetypeSelectionMap): FlowStep[] => [
+const getFlowSteps = (selectedArchetype: SelectedArchetype): FlowStep[] => [
   ARCHETYPE_SELECTION_STEP,
-  ...getContentSteps(selection),
+  ...getContentSteps(selectedArchetype),
 ];
 
 const parseStoredState = (raw: unknown): StoredState => {
@@ -119,13 +107,15 @@ const parseStoredState = (raw: unknown): StoredState => {
 
   const record = raw as Record<string, unknown>;
   if ('answers' in record) {
+    const rawSelection =
+      'selectedArchetype' in record ? record.selectedArchetype : record.selectedArchetypes;
     return {
       answers: sanitizeAnswerMap(record.answers),
       currentIndex:
         typeof record.currentIndex === 'number' && Number.isFinite(record.currentIndex)
           ? record.currentIndex
           : undefined,
-      selectedArchetypes: sanitizeArchetypeSelection(record.selectedArchetypes),
+      selectedArchetype: sanitizeSelectedArchetype(rawSelection),
     };
   }
 
@@ -134,8 +124,8 @@ const parseStoredState = (raw: unknown): StoredState => {
 
 const App = () => {
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const [selectedArchetypes, setSelectedArchetypes] = useState<ArchetypeSelectionMap>(
-    DEFAULT_ARCHETYPE_SELECTION
+  const [selectedArchetype, setSelectedArchetype] = useState<SelectedArchetype>(
+    DEFAULT_SELECTED_ARCHETYPE
   );
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -147,12 +137,12 @@ const App = () => {
         const parsed = parseStoredState(JSON.parse(cached));
         setAnswers(parsed.answers);
         const storedSelection =
-          parsed.selectedArchetypes ?? deriveSelectionFromAnswers(parsed.answers);
-        setSelectedArchetypes(storedSelection);
+          parsed.selectedArchetype ?? deriveSelectionFromAnswers(parsed.answers);
+        setSelectedArchetype(storedSelection);
         const contentSteps = getContentSteps(storedSelection);
         const flowSteps = getFlowSteps(storedSelection);
         if (typeof parsed.currentIndex === 'number') {
-          const offset = parsed.selectedArchetypes ? 0 : 1;
+          const offset = parsed.selectedArchetype ? 0 : 1;
           const adjustedIndex = Math.max(
             0,
             Math.min(Math.floor(parsed.currentIndex + offset), flowSteps.length - 1)
@@ -177,14 +167,14 @@ const App = () => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify({ answers, currentIndex, selectedArchetypes })
+        JSON.stringify({ answers, currentIndex, selectedArchetype })
       );
     } catch (error) {
       console.warn('Failed to persist answers', error);
     }
-  }, [answers, currentIndex, isHydrated, selectedArchetypes]);
+  }, [answers, currentIndex, isHydrated, selectedArchetype]);
 
-  const contentSteps = useMemo(() => getContentSteps(selectedArchetypes), [selectedArchetypes]);
+  const contentSteps = useMemo(() => getContentSteps(selectedArchetype), [selectedArchetype]);
   const steps = useMemo<FlowStep[]>(
     () => [ARCHETYPE_SELECTION_STEP, ...contentSteps],
     [contentSteps]
@@ -204,15 +194,15 @@ const App = () => {
 
   const totals = useMemo(() => getSectionTotals(answers, contentSteps), [answers, contentSteps]);
   const activeArchetypes = useMemo(
-    () => ARCHETYPE_IDS.filter((id) => selectedArchetypes[id]),
-    [selectedArchetypes]
+    () => (selectedArchetype ? [selectedArchetype] : []),
+    [selectedArchetype]
   );
   const recommendation = useMemo(
     () => getRecommendation(totals, answers, activeArchetypes),
     [totals, answers, activeArchetypes]
   );
-  const recommendedArchetypes = useMemo(
-    () => getQualifiedArchetypes(totals, activeArchetypes),
+  const recommendedArchetype = useMemo(
+    () => getQualifiedArchetypes(totals, activeArchetypes)[0] ?? null,
     [totals, activeArchetypes]
   );
   const visibleSectionIds = useMemo<SectionId[]>(
@@ -236,11 +226,8 @@ const App = () => {
 
   const hasSelectedArchetype = activeArchetypes.length > 0;
 
-  const handleToggleArchetype = (archetypeId: ArchetypeId) => {
-    setSelectedArchetypes((prev) => ({
-      ...prev,
-      [archetypeId]: !prev[archetypeId],
-    }));
+  const handleSelectArchetype = (archetypeId: ArchetypeId) => {
+    setSelectedArchetype((prev) => (prev === archetypeId ? null : archetypeId));
   };
 
   const handleAnswer = (value: number) => {
@@ -271,7 +258,7 @@ const App = () => {
       return;
     }
     setAnswers({});
-    setSelectedArchetypes({ ...DEFAULT_ARCHETYPE_SELECTION });
+    setSelectedArchetype(DEFAULT_SELECTED_ARCHETYPE);
     setCurrentIndex(0);
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -303,7 +290,7 @@ const App = () => {
     switch (step.kind) {
       case 'archetype-selection':
         return (
-          <ArchetypeSelector selection={selectedArchetypes} onToggle={handleToggleArchetype} />
+          <ArchetypeSelector selectedArchetype={selectedArchetype} onSelect={handleSelectArchetype} />
         );
       case 'question':
         return (
@@ -331,7 +318,9 @@ const App = () => {
             recommendation={recommendation}
             questionSteps={questionSteps}
             visibleSections={visibleSectionIds}
-            recommendedArchetypes={recommendedArchetypes}
+            selectedArchetype={selectedArchetype}
+            recommendedArchetype={recommendedArchetype}
+            onGoToArchetypeSelection={() => setCurrentIndex(0)}
             onSelectQuestion={handleSelectQuestion}
           />
         );

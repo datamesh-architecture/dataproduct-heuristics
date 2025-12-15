@@ -1,13 +1,13 @@
 import {
   ARCHETYPE_IDS,
   ArchetypeId,
-  ArchetypeSelectionMap,
+  SelectedArchetype,
   SECTION_META,
 } from '../data/heuristics';
 
 interface ArchetypeSelectorProps {
-  selection: ArchetypeSelectionMap;
-  onToggle: (archetypeId: ArchetypeId) => void;
+  selectedArchetype: SelectedArchetype;
+  onSelect: (archetypeId: ArchetypeId) => void;
 }
 
 const QUESTIONS: Record<ArchetypeId, { prompt: string; helper: string }> = {
@@ -26,23 +26,23 @@ const QUESTIONS: Record<ArchetypeId, { prompt: string; helper: string }> = {
   },
 };
 
-const ArchetypeSelector = ({ selection, onToggle }: ArchetypeSelectorProps) => {
-  const hasSelection = ARCHETYPE_IDS.some((id) => selection[id]);
+const ArchetypeSelector = ({ selectedArchetype, onSelect }: ArchetypeSelectorProps) => {
+  const hasSelection = Boolean(selectedArchetype);
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/80">
       <h2 className="text-2xl font-semibold text-slate-900">Tell us about what you are building</h2>
-      <p className="mt-2 text-sm text-slate-600">Answer the prompts that fit; we will pull in the right heuristics.</p>
+      <p className="mt-2 text-sm text-slate-600">Pick the single statement that fits best; we will pull in the right heuristics.</p>
       <div className="mt-6 flex flex-col gap-4">
         {ARCHETYPE_IDS.map((id) => {
-          const isSelected = selection[id];
+          const isSelected = selectedArchetype === id;
           const title = SECTION_META[id].title;
           const { prompt, helper } = QUESTIONS[id];
           return (
             <button
               key={id}
               type="button"
-              onClick={() => onToggle(id)}
+              onClick={() => onSelect(id)}
               className={`flex flex-col rounded-xl border p-4 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-400 ${
                 isSelected
                   ? 'border-sky-400 bg-sky-50 text-sky-900'
@@ -62,7 +62,7 @@ const ArchetypeSelector = ({ selection, onToggle }: ArchetypeSelectorProps) => {
         })}
       </div>
       {!hasSelection && (
-        <p className="mt-4 text-sm text-rose-600">Select at least one statement to continue.</p>
+        <p className="mt-4 text-sm text-rose-600">Select one statement to continue.</p>
       )}
     </div>
   );
