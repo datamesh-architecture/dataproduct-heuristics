@@ -16,7 +16,7 @@ const QUESTIONS: Record<ArchetypeId, { prompt: string; helper: string }> = {
     helper: 'Choose this if you are sharing a direct slice of a single upstream system.',
   },
   aggregate: {
-    prompt: 'Is your data product an aggregation of data from various domains?',
+    prompt: 'Is your data product an aggregation of data from various domains that should be consumed by other data products?',
     helper: 'Choose this if value appears only after integrating multiple inputs.',
   },
   consumer: {
