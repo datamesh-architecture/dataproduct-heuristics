@@ -355,6 +355,15 @@ const App = () => {
           </button>
         </header>
 
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm shadow-amber-100">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+            Work in progress
+          </p>
+          <p className="mt-1 text-sm text-amber-800">
+            This tool is under active development and its guidance may change.
+          </p>
+        </div>
+
         <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/80">
           <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
             <span>
