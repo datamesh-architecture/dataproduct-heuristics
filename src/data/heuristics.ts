@@ -262,6 +262,13 @@ const consumerQuestions: QuestionStep[] = [
     "Does the cut reflect how a consumer acts or decides, not how data happens to be stored?",
     2,
   ),
+  createQuestion(
+    "consumer-correct-consumers",
+    "consumer",
+    "Consumer-aligned",
+    "Will your data product used by business users, data analysts, data scientists, or applications?",
+    2,
+  ),
 ];
 
 const SECTION_MAX_POINTS: Record<SectionId, number> = {
